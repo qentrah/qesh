@@ -1,0 +1,17 @@
+{
+  "defaultPath": "~",
+  "shell": "/bin/zsh",
+  "fontFamily": "Menlo, Monaco, monospace",
+  "fontSize": 14,
+  "tabsPosition": "left",
+  "theme": {
+    "background": "#0e0d11",
+    "surface": "#141318",
+    "foreground": "#d4d4d4",
+    "muted": "#a09ca8",
+    "border": "#45414e",
+    "primary": "#9cdcfe",
+    "error": "#f48771",
+    "selection": "#264f78"
+  }
+}

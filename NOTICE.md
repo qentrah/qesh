@@ -1,0 +1,18 @@
+# Third-party notices
+
+Qesh's original source is MIT-licensed, copyright Qentrah. Dependencies and
+vendored code retain their respective licenses.
+
+- TermCN components and theme infrastructure: MIT, copyright Aniket Pawar.
+  See `src/termcn/LICENSE` and `src/termcn/NOTICE.md`.
+- zsh-syntax-highlighting: BSD, pinned at
+  `e6683f20e5c38d3e5447f45845d04ddda75d0f23`. See
+  `src/shell/vendor/zsh-syntax-highlighting/COPYING.md` and `NOTICE.md` there.
+- Node.js and bundled third-party runtime notices: `src/assets/Node-LICENSE.txt`.
+- Bun: `src/assets/Bun-LICENSE.md`.
+- Electron/Chromium: `LICENSE` and `LICENSES.chromium.html` shipped in the desktop
+  app's Resources directory. Other runtime dependencies retain their license
+  files under the app's `Resources/terminal/node_modules/` directory.
+- The Qentrah mark comes from https://qentrah.com/brand/qentrah.svg. The mark is
+  used for this Qentrah project; the software license does not grant trademark
+  rights or imply endorsement of derivative products.

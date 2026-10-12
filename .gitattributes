@@ -1,0 +1,5 @@
+* text=auto
+*.png binary
+*.icns binary
+src/shell/vendor/** -whitespace
+src/assets/*-LICENSE* -whitespace

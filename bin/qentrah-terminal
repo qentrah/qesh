@@ -1,0 +1,9 @@
+#!/bin/sh
+# Resolve this script even when launched through an npm/bun bin symlink.
+if ! command -v bun >/dev/null 2>&1; then
+  printf '%s\n' 'Qesh requires Bun. Install it from https://bun.sh.' >&2
+  exit 1
+fi
+QENTRAH_SCRIPT=$(bun -e 'console.log(require("node:fs").realpathSync(process.argv[1]))' "$0") || exit 1
+QENTRAH_ROOT=$(dirname "$(dirname "$QENTRAH_SCRIPT")")
+exec bun "$QENTRAH_ROOT/src/index.tsx" "$@"

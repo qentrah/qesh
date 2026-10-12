@@ -1,0 +1,14 @@
+node_modules/
+.git/
+.DS_Store
+*.app/
+*.zip
+*.log
+*.tmp
+.zsh_history
+.zsh_sessions/
+desktop/renderer.bundle.js
+desktop/xterm.css
+coverage/
+work/
+dist/

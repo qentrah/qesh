@@ -1,0 +1,21 @@
+name: macOS checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.5'
+      - run: bun install --frozen-lockfile
+      - run: bun run check
+      - run: bun test
+      - run: node scripts/smoke-cli.mjs
+      - run: node scripts/smoke-desktop.mjs
+      - run: bun run build:desktop
