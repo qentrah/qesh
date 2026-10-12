@@ -1,0 +1,36 @@
+name: Publish existing macOS builds
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful macOS build workflow run ID
+        required: true
+      tag:
+        description: Existing release tag
+        required: true
+        default: v0.3.0
+permissions:
+  contents: write
+  actions: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Qesh-macOS-*
+          merge-multiple: true
+          path: release
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: Attach verified builds to existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          gh release view "$RELEASE_TAG"
+          cd release
+          shasum -a 256 -c Qesh-macOS-arm64.sha256
+          shasum -a 256 -c Qesh-macOS-x64.sha256
+          gh release upload "$RELEASE_TAG" ./*.zip ./*.sha256 --clobber
