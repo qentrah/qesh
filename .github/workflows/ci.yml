@@ -1,10 +1,23 @@
-name: macOS checks
-on: [push, pull_request]
+name: macOS checks and builds
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
-  check:
-    runs-on: macos-14
+  build:
+    name: macOS ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x64
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,9 +26,62 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: '1.3.5'
+      - name: Verify native architecture
+        env:
+          EXPECTED_ARCH: ${{ matrix.arch }}
+        run: node -e 'if (process.arch !== process.env.EXPECTED_ARCH) throw new Error(`Unexpected architecture ${process.arch}`)'
       - run: bun install --frozen-lockfile
       - run: bun run check
       - run: bun test
       - run: node scripts/smoke-cli.mjs
       - run: node scripts/smoke-desktop.mjs
-      - run: bun run build:desktop
+      - name: Build standalone app
+        run: node scripts/build-macos-app.mjs dist/Qesh.app
+      - name: Smoke-test bundled runtimes and shell sessions
+        env:
+          QENTRAH_NODE: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/node
+          QENTRAH_BUN: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/bun
+          QENTRAH_DESKTOP_HOST: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/terminal/desktop/host.mjs
+        run: node scripts/smoke-desktop.mjs
+      - name: Verify signature after runtime test
+        run: codesign --verify --deep --strict dist/Qesh.app
+      - name: Package app, sidecar configuration, and checksum
+        env:
+          BUILD_ARCH: ${{ matrix.arch }}
+        working-directory: dist
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent Qesh.app "Qesh-macOS-${BUILD_ARCH}.zip"
+          zip -j "Qesh-macOS-${BUILD_ARCH}.zip" qesh.config.json
+          shasum -a 256 "Qesh-macOS-${BUILD_ARCH}.zip" > "Qesh-macOS-${BUILD_ARCH}.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Qesh-macOS-${{ matrix.arch }}
+          path: |
+            dist/Qesh-macOS-*.zip
+            dist/Qesh-macOS-*.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+  release:
+    name: Attach macOS builds to preview release
+    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Qesh-macOS-*
+          path: release
+          merge-multiple: true
+      - name: Publish preview assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$RELEASE_TAG"; then
+            gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Qesh $RELEASE_TAG" --generate-notes
+          fi
+          gh release upload "$RELEASE_TAG" release/*.zip release/*.sha256 --clobber
