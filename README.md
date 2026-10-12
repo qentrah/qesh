@@ -4,7 +4,7 @@
 
 Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anomalyco/opentui), React, TypeScript, and adapted [TermCN](https://www.termcn.dev/) components. MIT licensed.
 
-[Download the macOS app](https://github.com/qentrah/qesh/releases) · [Report an issue](https://github.com/qentrah/qesh/issues) · [Contribute](CONTRIBUTING.md)
+[Website & screenshots](https://qentrah.com/qesh) · [Download the macOS app](https://github.com/qentrah/qesh/releases) · [Report an issue](https://github.com/qentrah/qesh/issues) · [Contribute](CONTRIBUTING.md)
 
 ![Qesh command-line workspace](preview.png)
 
@@ -165,7 +165,7 @@ This builds `../Qesh.app` and places a default `qesh.config.json` beside it if o
 node scripts/build-macos-app.mjs /path/to/Qesh.app
 ```
 
-The build refuses to overwrite an existing app. It bundles the local Bun and Node binaries, dependencies, source, licenses, and Qentrah icon, then applies and verifies a local signature. Build on the Mac architecture you intend to distribute; the current release is arm64. Signing with a Developer ID and notarization are not part of this build script.
+The build refuses to overwrite an existing app. It bundles the local Bun and Node binaries, dependencies, source, licenses, and Qentrah icon, then applies and verifies a local signature. Build on the Mac architecture you intend to distribute; the current release includes native arm64 and x64 builds. Signing with a Developer ID and notarization are not part of this build script.
 
 To regenerate the icon, install Pillow and run `python3 scripts/generate-app-icon.py`. To build only desktop renderer assets, run `bun run build:desktop`.
 
