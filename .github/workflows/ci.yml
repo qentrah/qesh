@@ -31,6 +31,8 @@ jobs:
           EXPECTED_ARCH: ${{ matrix.arch }}
         run: node -e 'if (process.arch !== process.env.EXPECTED_ARCH) throw new Error(`Unexpected architecture ${process.arch}`)'
       - run: bun install --frozen-lockfile
+      - name: Install Electron native runtime
+        run: node node_modules/electron/install.js
       - run: bun run check
       - run: bun test
       - run: node scripts/smoke-cli.mjs
