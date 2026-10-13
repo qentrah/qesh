@@ -1,10 +1,11 @@
-import { useEffect, useReducer, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useReducer, useRef, useState, useSyncExternalStore } from 'react';
 import { useKeyboard, usePaste, useTerminalDimensions } from '@opentui/react';
 import { copyText } from '../clipboard';
 import { basename, sep } from 'node:path';
 import { homedir } from 'node:os';
 import type { Workspace } from '../workspace';
-import { geometry, leaves, minimum, resizeJunction, nearestDivider, neighbor, setRatio, type Divider } from '../layout';
+import { geometry, type Divider } from '../layout';
+import { WorkspaceInteractions, type WorkspaceCommand } from '../workspace-interactions';
 import { encodeKey, KEYMAP } from '../keys';
 import { Tabs } from '../termcn/ui/tabs';
 import { Dialog } from '../termcn/ui/dialog';
@@ -13,7 +14,7 @@ import { ThemeProvider } from '../termcn/providers/theme-provider';
 import { colors, qentrahTheme, applyTheme } from './theme';
 import './terminal-surface';
 
-type Modal = { kind: 'confirm'; title: string; action: () => void } | { kind: 'rename' } | { kind: 'help' } | null;
+type Modal = { kind: 'confirm'; title: string; action: () => void } | { kind: 'rename'; save: (name: string) => void } | { kind: 'help' } | null;
 export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Workspace; onQuit: () => void; clipboard?: (text: string) => Promise<void> }) {
   const { width, height } = useTerminalDimensions();
   const [, update] = useReducer(n => n + 1, 0);
@@ -36,73 +37,33 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
   const tab = workspace.tabs[workspace.active];
   const bounds = { x: 0, y: 0, width: Math.max(2, width), height: Math.max(2, height - topChrome - footerRows) };
   const layout = tab ? geometry(tab.tree, bounds, tab.focused) : null;
-  const layoutRef=useRef(layout);layoutRef.current=layout;
   useEffect(()=>{if(desktop)workspace.emit('desktop-layout',layout?{cols:width,rows:height,panes:[...layout.panes].map(([id,rect])=>({id,...rect})),dividers:layout.dividers,collapsed:layout.collapsed}:null);},[width,height,tab?.tree,tab?.focused,workspace.revision,footerRows]);
   const paneHeader = (id: string) => !desktop || (layout?.panes.size || 0) > 1 || workspace.sessions.sessions.get(id)?.status !== 'running' ? 1 : 0;
   useEffect(() => {
     if (!layout) return;
     for (const [id, rect] of layout.panes) workspace.sessions.resize(id, rect.width, Math.max(1, rect.height - paneHeader(id)));
   }, [width, height, tab?.tree, tab?.focused, workspace, workspace.revision, footerRows]);
-  function confirm(title: string, ids: string[], action: () => void) {
-    if (ids.some(id => ['running', 'starting'].includes(workspace.sessions.sessions.get(id)?.status ?? ''))) {
-      setModal({ kind: 'confirm', title, action });
-    } else action();
-  }
+  const callbacks = useRef({ bounds, onQuit, copy: () => copySelection() });
+  callbacks.current = { bounds, onQuit, copy: () => copySelection() };
+  const interactions = useMemo(() => new WorkspaceInteractions(workspace, {
+    bounds: () => callbacks.current.bounds,
+    isBlocked: () => !!modalRef.current,
+    confirm: (title, action) => setModal({ kind: 'confirm', title, action }),
+    rename: (name, save) => { setRename(name); setModal({ kind: 'rename', save }); },
+    help: () => setModal({ kind: 'help' }),
+    notice: setNotice,
+    theme: theme => applyTheme(theme as typeof colors),
+    quit: () => callbacks.current.onQuit(),
+    copy: () => callbacks.current.copy(),
+    redraw: update,
+  }), [workspace]);
   useEffect(() => {
-    const command = (message: { action: string; id?: string; ids?: string[]; name?: string; group?: string; before?: string; edge?: string; target?:string; x?:number; y?:number; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
-      if(message.action==='configure'&&message.config){workspace.sessions.setScrollback(message.config.scrollback);workspace.maxWorkspaces=message.config.storage.maxWorkspaces;applyTheme(message.config.theme);workspace.emit('change');return;}
-      if (modalRef.current) return;
-      if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
-      else if(message.action==='new-workspace')workspace.newSpace(message.name);
-      else if(message.action==='switch-workspace'&&message.id)workspace.selectSpace(message.id);
-      else if(message.action==='rename-workspace'&&message.id&&message.name)workspace.renameSpace(message.id,message.name);
-      else if(message.action==='color-workspace'&&message.id)workspace.colorSpace(message.id,message.color||'');
-      else if(message.action==='color-tab'&&message.id)workspace.colorTab(message.id,message.color||'');
-      else if(message.action==='rename-pane'&&message.id&&message.name){const session=workspace.sessions.sessions.get(message.id);if(session){session.label=message.name.slice(0,40);workspace.emit('change');}}
-      else if(message.action==='close-workspace'&&message.id){const space=workspace.spaces.find(space=>space.id===message.id);if(space)(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close workspace?',space.tabs.flatMap(tab=>leaves(tab.tree)),()=>{workspace.closeSpace(space.id);if(!workspace.spaces.length)onQuit();});}
-      else if (message.action === 'new-tab') {if(message.id){if(!workspace.spaces.some(space=>space.id===message.id))return;workspace.selectSpace(message.id);}workspace.newTab(message.cwd);}
-      else if (message.action === 'switch-tab' && message.id) workspace.selectTab(message.id);
-      else if (message.action === 'rename-tab' && message.id && message.name) { if(!workspace.selectTab(message.id))return; workspace.rename(message.name); }
-      else if (message.action === 'close-tab' && message.id) { if(!workspace.selectTab(message.id))return; (message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close tab?', leaves(workspace.tab.tree), closeTab); }
-      else if(message.action==='close-pane'&&message.id){if(!workspace.activatePane(message.id))return;(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close this shell?',[message.id],closePane);}
-      else if(message.action==='resize-junction'&&message.ids&&workspace.tab){const current=workspace.tab;const next=resizeJunction(current.tree,{x:0,y:0,width:layoutRef.current?.dividers[0]?.parent.width??0,height:layoutRef.current?.dividers[0]?.parent.height??0},current.focused,message.ids,message.x!,message.y!);if(next!==current.tree){current.tree=next;workspace.emit('change');}}
-      else if(message.action==='resize-split'&&message.id&&Number.isFinite(message.x)&&Number.isFinite(message.y)){const divider=layoutRef.current?.dividers.find(item=>item.id===message.id);if(divider)resizeDivider(divider,message.x!,message.y!);}
-      else if(message.action==='equalize')workspace.equalize();
-      else if(message.action==='restart-pane'&&message.id)workspace.sessions.restart(message.id);
-      else if (message.action === 'split-right') {if(message.id&&!workspace.activatePane(message.id))return;workspace.split('horizontal');}
-      else if (message.action === 'split-down') {if(message.id&&!workspace.activatePane(message.id))return;workspace.split('vertical');}
-      else if (message.action === 'help') setModal({kind:'help'});
-      else if(message.action==='rename-group'&&message.group&&message.name){if(message.id){if(!workspace.spaces.some(space=>space.id===message.id))return;workspace.selectSpace(message.id);}workspace.renameGroup(message.group,message.name);}
-      else if (message.action === 'new-group' && message.name) workspace.addGroup(message.name);
-      else if (message.action === 'group-tab' && message.id) workspace.groupTab(message.id,message.group);
-      else if (message.action === 'reorder-tab' && message.id && message.before) workspace.reorderTab(message.id,message.before);
-      else if (message.action === 'dock-tab' && message.id && message.edge) workspace.dockTab(message.id,message.edge,message.target);
-      else if (message.action === 'focus-pane' && message.id) workspace.activatePane(message.id);
-      else if (message.action === 'dock-pane' && message.id && message.edge) workspace.dockPane(message.id,message.edge,message.target);
-      else if (message.action === 'detach-pane' && message.id) workspace.detachPane(message.id);
-    };
-    workspace.on('desktop-command',command); return () => { workspace.off('desktop-command',command); };
-  }, [workspace]);
-  function closePane() { workspace.closePane(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
-  function closeTab() { workspace.closeTab(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
+    const command = (message: WorkspaceCommand) => interactions.dispatch(message);
+    workspace.on('desktop-command', command);
+    return () => { workspace.off('desktop-command', command); interactions.dispose(); };
+  }, [workspace, interactions]);
   function resizeDivider(divider: Divider, x: number, y: number) {
-    const currentTab=workspace.tab;if (!currentTab || modalRef.current) return;
-    const { parent, axis } = divider;
-    const firstMin = minimumNode(divider.id, true), secondMin = minimumNode(divider.id, false);
-    const size = (axis === 'horizontal' ? parent.width : parent.height) - 1;
-    const distance = axis === 'horizontal' ? x - parent.x : y - parent.y;
-    const low = axis === 'horizontal' ? firstMin.width : firstMin.height;
-    const high = size - (axis === 'horizontal' ? secondMin.width : secondMin.height);
-    currentTab.tree = setRatio(currentTab.tree, divider.id, Math.max(low, Math.min(high, distance)) / size);
-    workspace.emit('change');
-  }
-  function minimumNode(id: string, first: boolean) {
-    function find(tree: typeof workspace.tab.tree): ReturnType<typeof minimum> | undefined {
-      if (tree.kind === 'pane') return;
-      if (tree.id === id) return minimum(first ? tree.first : tree.second);
-      return find(tree.first) ?? find(tree.second);
-    }
-    return find(workspace.tab.tree) ?? { width: 20, height: 5 };
+    interactions.dispatch({ action: 'resize-split', id: divider.id, x, y });
   }
   function copySelection() {
     const text = selections.current.get(workspace.tab.focused);
@@ -133,37 +94,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     }
     if (!prefixRef.current) { workspace.sessions.input(id, encodeKey(key, session?.terminal.modes.applicationCursorKeysMode)); return; }
     setCommand(false);
-    const command = key.sequence || key.name;
-    const currentLayout = geometry(currentTab.tree, bounds, id);
-    if (key.name === 'escape') return;
-    if (key.name === 'c') workspace.newTab();
-    else if (key.name === 'n' || key.name === 'p') workspace.switchTab(workspace.active + (key.name === 'n' ? 1 : -1));
-    else if (command === '%' || command === '"') {
-      const axis = command === '%' ? 'horizontal' : 'vertical';
-      const rect = currentLayout.panes.get(id)!;
-      if (currentLayout.collapsed || (axis === 'horizontal' ? rect.width < 41 : rect.height < 11)) setNotice('Enlarge the terminal before splitting this pane');
-      else workspace.split(axis);
-    } else if (['left', 'right', 'up', 'down'].includes(key.name)) {
-      if (!key.shift) {
-        if (currentLayout.collapsed) {
-          const ids = leaves(currentTab.tree), index = ids.indexOf(id);
-          workspace.focus(ids[(index + (key.name === 'left' || key.name === 'up' ? ids.length - 1 : 1)) % ids.length]!);
-        } else workspace.focus(neighbor(currentLayout.panes, id, key.name));
-      } else {
-        const axis = key.name === 'left' || key.name === 'right' ? 'horizontal' : 'vertical';
-        const dividerId = nearestDivider(currentTab.tree, id, axis);
-        const divider = currentLayout.dividers.find(d => d.id === dividerId);
-        if (divider) resizeDivider(divider, divider.x + (key.name === 'left' ? -2 : key.name === 'right' ? 2 : 0), divider.y + (key.name === 'up' ? -1 : key.name === 'down' ? 1 : 0));
-      }
-    } else if (key.name === 'r') { setRename(currentTab.name); setModal({ kind: 'rename' }); }
-    else if (key.name === 'x') confirm('Close this shell?', [id], closePane);
-    else if (key.name === 'w') confirm('Close this tab and its shells?', leaves(currentTab.tree), closeTab);
-    else if (key.name === 'q') confirm('Quit QH?', workspace.spaces.flatMap(space=>space.tabs.flatMap(t=>leaves(t.tree))), onQuit);
-    else if (key.name === 'pageup' || key.name === 'pagedown') { workspace.sessions.scroll(id, (key.name === 'pageup' ? 1 : -1) * Math.max(1, (session?.terminal.rows ?? 24) - 2)); update(); }
-    else if (key.name === 'y') copySelection();
-    else if (key.name === 'return' || key.name === 'enter') workspace.sessions.restart(id);
-    else if (command === '?' || key.name === '?') setModal({ kind: 'help' });
-    else setNotice(`Unknown workspace command. Ctrl+B ? opens help.`);
+    interactions.prefix(key);
   });
   if (!tab || !layout) return <text>Closing QH…</text>;
   const paneEntries = [...layout.panes];
@@ -207,7 +138,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
         </Dialog>}
         {modal.kind === 'rename' && <box border borderStyle="rounded" borderColor={colors.primary} paddingX={1} flexDirection="column">
           <text fg={colors.primary}><b>Rename tab</b></text>
-          <input focused value={rename} onInput={setRename} onSubmit={value => { workspace.rename(typeof value === 'string' ? value : rename); setModal(null); }} placeholder="Tab name" width="100%" />
+          <input focused value={rename} onInput={setRename} onSubmit={value => { const save = modal.save; setModal(null); save(typeof value === 'string' ? value : rename); }} placeholder="Tab name" width="100%" />
           <text fg={colors.muted}>Enter saves · Esc cancels</text>
         </box>}
         {modal.kind === 'help' && <box flexDirection="column" padding={1}>
