@@ -10,7 +10,7 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 ## Install and quick commands
 
-Qesh 0.5.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+Qesh 0.5.1 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
 curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
