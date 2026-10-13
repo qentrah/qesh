@@ -1,5 +1,6 @@
 // Native node-pty runs in Node, isolated from Bun's renderer process.
 import pty from 'node-pty';
+import {foregroundIdentity} from './process-identity.mjs';
 import {execFile} from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { accessSync, constants } from 'node:fs';
@@ -13,7 +14,7 @@ const pending = new Map();
 const send = message => process.stdout.write(JSON.stringify(message) + '\n');
 let shuttingDown = false;
 const info=new Map();
-const poll=setInterval(()=>{for(const [id,session] of sessions){if(info.get(id)?.busy)continue;const previous=info.get(id)||{};info.set(id,{...previous,busy:true});execFile('/usr/sbin/lsof',['-a','-p',String(session.pid),'-d','cwd','-Fn'],{timeout:1500},(_error,stdout)=>{if(sessions.get(id)!==session)return;const cwd=stdout?.split('\n').find(line=>line.startsWith('n'))?.slice(1);let processName;try{processName=session.process;}catch{}const next={cwd:cwd||previous.cwd,process:processName||previous.process,busy:false};info.set(id,next);if(next.cwd!==previous.cwd||next.process!==previous.process)send({type:'info',id,generation:generations.get(session),cwd:next.cwd,process:next.process});});}},1500);poll.unref();
+const poll=setInterval(()=>{for(const [id,session] of sessions){if(info.get(id)?.busy)continue;const previous=info.get(id)||{};info.set(id,{...previous,busy:true});execFile('/usr/sbin/lsof',['-a','-p',String(session.pid),'-d','cwd','-Fn'],{timeout:1500},async(_error,stdout)=>{if(sessions.get(id)!==session)return;const cwd=stdout?.split('\n').find(line=>line.startsWith('n'))?.slice(1);let processName;try{processName=session.process;}catch{}processName=await foregroundIdentity(session.pid,processName);if(sessions.get(id)!==session)return;const next={cwd:cwd||previous.cwd,process:processName||previous.process,busy:false};info.set(id,next);if(next.cwd!==previous.cwd||next.process!==previous.process)send({type:'info',id,generation:generations.get(session),cwd:next.cwd,process:next.process});});}},1500);poll.unref();
 function close(id) {
   const session = sessions.get(id);
   if (!session) return;

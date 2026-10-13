@@ -3,11 +3,12 @@ const { join, isAbsolute } = require('node:path');
 const { homedir } = require('node:os');
 let jsonc;try{jsonc=require('jsonc-parser');}catch{jsonc=require('../terminal/node_modules/jsonc-parser');}
 const shortcuts={'new-tab':'Cmd+T','new-window':'Cmd+N','new-workspace':'Cmd+Shift+N',settings:'Cmd+,',commands:'Cmd+Shift+P','split-right':'Cmd+Alt+Right','split-down':'Cmd+Alt+Down',help:'Cmd+Shift+/'};
-const defaults = { defaultPath: '~', shell: '/bin/zsh', fontFamily: 'Menlo, Monaco, monospace', fontSize: 14, tabsPosition: 'left', theme: { background: '#0e0d11', surface: '#141318', foreground: '#d4d4d4', muted: '#a09ca8', border: '#45414e', primary: '#9cdcfe', error: '#f48771', selection: '#264f78' }, commands: {}, updates: {}, apps: {codex:{name:'Codex',match:'codex',icon:'codex'},claude:{name:'Claude',match:'claude',icon:'claude'},opencode:{name:'OpenCode',match:'opencode',icon:'opencode'}}, themes:{}, shortcuts, scrollback:5000, storage:{enabled:true,saveDelayMs:250,maxWorkspaces:30}, restore: true, updateChannel: 'preview' };
+const defaults = { defaultPath: '~', shell: '/bin/zsh', fontFamily: 'Menlo, Monaco, monospace', fontSize: 14, tabsPosition: 'left', theme: { background: '#0e0d11', surface: '#141318', foreground: '#d4d4d4', muted: '#a09ca8', border: '#45414e', primary: '#9cdcfe', error: '#f48771', selection: '#264f78' }, commands: {}, updates: {}, apps: {codex:{name:'Codex',match:'codex',icon:'codex'},claude:{name:'Claude',match:'claude',icon:'claude'},opencode:{name:'OpenCode',match:'opencode',icon:'opencode'},pi:{name:'Pi',match:'pi',icon:'pi'},gemini:{name:'Gemini',match:'gemini',icon:'gemini'},aider:{name:'Aider',match:'aider',icon:'aider'},gh:{name:'GitHub CLI',match:'gh',icon:'terminal'},node:{name:'Node.js',match:'node',icon:'terminal'},python:{name:'Python',match:'python',icon:'terminal'}}, themes:{}, shortcuts, scrollback:5000, storage:{enabled:true,saveDelayMs:250,maxWorkspaces:30}, restore: true, updateChannel: 'preview' };
 function validate(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Configuration must be a JSON object.');
   for (const key of Object.keys(value)) if (!Object.hasOwn(defaults,key)) throw new Error(`Unknown setting: ${key}`);
-  const config = { ...defaults, ...value, theme: { ...defaults.theme, ...value.theme }, shortcuts:{...shortcuts,...value.shortcuts},storage:{...defaults.storage,...value.storage} };
+  if(value.apps!==undefined&&(!value.apps||typeof value.apps!=='object'||Array.isArray(value.apps)))throw new Error('apps must be an object.');
+  const config = { ...defaults, ...value, apps:{...defaults.apps,...value.apps}, theme: { ...defaults.theme, ...value.theme }, shortcuts:{...shortcuts,...value.shortcuts},storage:{...defaults.storage,...value.storage} };
   if (typeof config.defaultPath !== 'string' || (!isAbsolute(config.defaultPath) && config.defaultPath !== '~' && !config.defaultPath.startsWith('~/'))) throw new Error('defaultPath must be an absolute path or begin with ~/');
   if (typeof config.shell !== 'string' || !isAbsolute(config.shell)) throw new Error('shell must be an absolute path.');
   if (typeof config.fontFamily !== 'string' || !config.fontFamily.trim() || config.fontFamily.length > 100) throw new Error('fontFamily must be a font name.');
@@ -25,7 +26,7 @@ function validate(value) {
     }
   }
   if(!config.apps||typeof config.apps!=='object'||Array.isArray(config.apps))throw new Error('apps must be an object.');
-  for(const [key,item]of Object.entries(config.apps)){if(!/^[a-z][a-z0-9-]{0,39}$/.test(key)||!item||typeof item.name!=='string'||!item.name.trim()||item.name.length>40||typeof item.match!=='string'||!item.match.trim()||item.match.length>80||!['codex','claude','opencode','shell'].includes(item.icon))throw new Error(`Invalid app identity: ${key}`);}
+  for(const [key,item]of Object.entries(config.apps)){if(!/^[a-z][a-z0-9-]{0,39}$/.test(key)||!item||typeof item.name!=='string'||!item.name.trim()||item.name.length>40||typeof item.match!=='string'||!item.match.trim()||item.match.length>80||!['codex','claude','opencode','pi','gemini','aider','terminal','shell'].includes(item.icon))throw new Error(`Invalid app identity: ${key}`);}
   if(typeof config.restore!=='boolean')throw new Error('restore must be true or false.');
   if(!['preview','stable'].includes(config.updateChannel))throw new Error('updateChannel must be preview or stable.');
   if(!config.themes||typeof config.themes!=='object'||Array.isArray(config.themes)||Object.keys(config.themes).length>20)throw new Error('themes must be an object with up to 20 named themes.');
