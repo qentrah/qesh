@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>QH terminal icon: square Q with split cursor</title>
+  <rect x="80" y="80" width="864" height="864" rx="190" fill="#0e0d11"/>
+  <g fill="#f4f4f5">
+    <path d="M272 272 H720 V608 H632 V360 H360 V632 H608 V720 H272 Z"/>
+    <rect x="640" y="640" width="112" height="112"/>
+  </g>
+</svg>

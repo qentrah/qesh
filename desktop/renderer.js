@@ -103,7 +103,7 @@ $('command-input').addEventListener('input',listCommands);$('command-input').add
 function updateMenuShortcuts(){for(const item of menu.querySelectorAll('button')){const key=config.shortcuts[item.dataset.action];const badge=item.querySelector('kbd');if(badge)badge.textContent=key?key.replaceAll('Cmd','⌘').replaceAll('Shift','⇧').replaceAll('Alt','⌥').replaceAll('Ctrl','⌃').replaceAll('+',''):'';}}
 async function action(name){
  if(name==='new-workspace'){showView('terminal');control({action:'new-workspace',name:'Workspace'});terminal.focus();}
- else if(name==='check-updates'){notice('Checking Qesh releases…');const result=await window.qTerminal.action({action:'check-updates'});notice(result.error||`Installed ${result.current}; available ${result.version||'none'}. Run qh update for a managed CLI install.`);}
+ else if(name==='check-updates'){notice('Checking QH releases…');const result=await window.qTerminal.action({action:'check-updates'});notice(result.error||`Installed ${result.current}; available ${result.version||'none'}. Run qh update for a managed CLI install.`);}
  else if(['new-tab','split-right','split-down','equalize'].includes(name)){showView('terminal');control({action:name});terminal.focus();}
  else if(name==='configure')await configure();
  else if(name==='group'){showView('terminal');pendingGroup='Group';let serial=2;while(state.groups.includes(pendingGroup))pendingGroup='Group '+serial++;control({action:'new-group',name:pendingGroup});}

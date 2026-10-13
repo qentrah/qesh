@@ -3,8 +3,8 @@ import {mkdtempSync,rmSync} from 'node:fs';import {join} from 'node:path';import
 const dataDir=mkdtempSync(join(tmpdir(),'qh-cli-smoke-'));
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
-const cli = process.env.QENTRAH_SMOKE_CLI || fileURLToPath(new URL('../bin/qesh', import.meta.url));
-const terminal = pty.spawn(cli, [], { cwd: process.cwd(), cols: 120, rows: 30, name: 'xterm-256color', env: { ...process.env, QESH_PERSIST: '0',QESH_DATA_DIR:dataDir,ZDOTDIR:dataDir, TERM: 'xterm-256color' } });
+const cli = process.env.QENTRAH_SMOKE_CLI || fileURLToPath(new URL('../bin/qh', import.meta.url));
+const terminal = pty.spawn(cli, [], { cwd: process.cwd(), cols: 120, rows: 30, name: 'xterm-256color', env: { ...process.env, QH_PERSIST: '0',QH_DATA_DIR:dataDir,ZDOTDIR:dataDir, TERM: 'xterm-256color' } });
 let output = '', exit;
 terminal.onData(data => { output = (output + data).slice(-500000); });
 terminal.onExit(event => { exit = event; });
@@ -19,9 +19,9 @@ try {
   await until(() => output.includes('Ctrl+B'));
   terminal.write("printf '\\nCLI-READY-%s\\n' $$\r");
   await until(() => /CLI-READY-\d+/.test(output));
-  assert.ok(output.includes('Qesh'));
+  assert.ok(output.includes('QH'));
   terminal.write('\x02q');
-  await until(() => output.includes('Quit Qesh?'));
+  await until(() => output.includes('Quit QH?'));
   terminal.write('\t'); await new Promise(resolve => setTimeout(resolve, 80)); terminal.write('\r');
   await until(() => exit !== undefined);
   assert.equal(exit.exitCode, 0);

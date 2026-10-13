@@ -1,6 +1,6 @@
 # Third-party notices
 
-Qesh's original source is MIT-licensed, copyright Qentrah. Dependencies and
+QH's original source is MIT-licensed, copyright Qentrah. Dependencies and
 vendored code retain their respective licenses.
 
 - TermCN components and theme infrastructure: MIT, copyright Aniket Pawar.
@@ -13,14 +13,14 @@ vendored code retain their respective licenses.
 - Electron/Chromium: `LICENSE` and `LICENSES.chromium.html` shipped in the desktop
   app's Resources directory. Other runtime dependencies retain their license
   files under the app's `Resources/terminal/node_modules/` directory.
-- The Qentrah mark comes from https://qentrah.com/brand/qentrah.svg. The mark is
-  used for this Qentrah project; the software license does not grant trademark
+- The QH square Q and block cursor are original Qentrah brand assets. The
+  software license does not grant trademark
   rights or imply endorsement of derivative products.
 
 ## Tool identifiers
 
 Claude and OpenCode SVG identifiers are from Simple Icons (CC0): https://github.com/simple-icons/simple-icons. The OpenAI monoblossom identifies Codex and is from https://cdn.openai.com/brand/OpenAI-Logos-2025.zip. Brand marks remain their owners’ trademarks and identify the running tools; no affiliation is implied.
 
-The Settings gear uses Lucide's settings.svg (https://github.com/lucide-icons/lucide/blob/main/icons/settings.svg), copyright 2026 Lucide Icons and Contributors. The ISC license and bundled upstream license text are in desktop/icons/Lucide-LICENSE.txt. Other small toolbar/menu paths are Qesh source assets.
+The Settings gear uses Lucide's settings.svg (https://github.com/lucide-icons/lucide/blob/main/icons/settings.svg), copyright 2026 Lucide Icons and Contributors. The ISC license and bundled upstream license text are in desktop/icons/Lucide-LICENSE.txt. Other small toolbar/menu paths are QH source assets.
 
-Pi, Gemini, Aider, and general CLI icons are original Qesh symbols for identification, not official vendor artwork. Foreground detection inspects local process metadata and only sends the resolved tool name to the GUI; command arguments are not stored.
+Pi, Gemini, Aider, and general CLI icons are original QH symbols for identification, not official vendor artwork. Foreground detection inspects local process metadata and only sends the resolved tool name to the GUI; command arguments are not stored.

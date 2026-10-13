@@ -10,7 +10,7 @@ const root = bundled ? join(process.resourcesPath, 'terminal') : resolve(__dirna
 const runtime = bundled ? join(process.resourcesPath, 'runtime') : null;
 const {configPath,dataDir,databasePath}=require(join(root,'lib/paths.cjs'));
 mkdirSync(dataDir,{recursive:true,mode:0o700});
-const legacy=join(bundled?dirname(resolve(process.resourcesPath,'../..')):root,'qesh.config.json');
+const legacy=join(bundled?dirname(resolve(process.resourcesPath,'../..')):root,'qh.config.json');
 if(!existsSync(configPath)&&existsSync(join(dataDir,'config.json')))copyFileSync(join(dataDir,'config.json'),configPath);
 if(!existsSync(configPath)&&existsSync(legacy))copyFileSync(legacy,configPath);
 const windows = new Map(); let quitting = false;
@@ -21,7 +21,7 @@ const focused = () => windows.get(BrowserWindow.getFocusedWindow()?.id) || [...w
 async function closeWindow(record,confirmed=false) {
   if (!record || record.closing) return false; record.closing=true;
   if (!record.exited && !confirmed) {
-    const result = await dialog.showMessageBox(record.window,{type:'question',title:'Close Qesh window?',message:'Close this window’s shell sessions?',detail:'Running commands will be stopped.',buttons:['Cancel','Close sessions'],defaultId:0,cancelId:0});
+    const result = await dialog.showMessageBox(record.window,{type:'question',title:'Close QH window?',message:'Close this window’s shell sessions?',detail:'Running commands will be stopped.',buttons:['Cancel','Close sessions'],defaultId:0,cancelId:0});
     if (result.response===0) {record.closing=false;return false;}
   }
   clearTimeout(record.uiTimer);if(record.config.storage.enabled)try{uiStore('save',collectUI(record));}catch{}
@@ -33,7 +33,7 @@ async function quitAll() {
   if (quitting) return;
   const records=[...windows.values()];
   if (records.some(record => !record.exited)) {
-    const result=await dialog.showMessageBox(focused()?.window,{type:'question',title:'Quit Qesh?',message:'Close all windows and shell sessions?',buttons:['Cancel','Quit'],defaultId:0,cancelId:0});if(result.response===0)return;
+    const result=await dialog.showMessageBox(focused()?.window,{type:'question',title:'Quit QH?',message:'Close all windows and shell sessions?',buttons:['Cancel','Quit'],defaultId:0,cancelId:0});if(result.response===0)return;
   }
   quitting=true;await Promise.all(records.map(record=>closeWindow(record,true)));app.quit();
 }
@@ -46,7 +46,7 @@ function settingsWindow(owner,page){
  const existing=[...windows.values()].find(record=>record.kind==='settings'&&(record.owner===owner||(!owner&&record.owner?.window.isDestroyed())));if(existing){existing.window.show();existing.window.focus();if(page)existing.window.webContents.send('terminal:event',{type:'action',action:'settings-page',page});return existing;}
  const config=owner?.config||settings();let stored={};if(config.storage.enabled)try{stored=uiStore('load').settings||{};}catch{}
  const anchor=owner?.window.getBounds(),area=anchor?screen.getDisplayMatching(anchor).workArea:screen.getPrimaryDisplay().workArea,width=Math.min(area.width,Math.max(620,stored.width||820)),height=Math.min(area.height,Math.max(420,stored.height||700));
- const window=new BrowserWindow({width,height,x:Math.max(area.x,Math.min(area.x+area.width-width,(anchor?.x||area.x)+(anchor?.width||0)+12)),y:Math.max(area.y,Math.min(area.y+area.height-height,anchor?.y||area.y)),minWidth:620,minHeight:420,title:'Qesh Settings',backgroundColor:config.theme.background,titleBarStyle:'hiddenInset',trafficLightPosition:{x:16,y:16},show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
+ const window=new BrowserWindow({width,height,x:Math.max(area.x,Math.min(area.x+area.width-width,(anchor?.x||area.x)+(anchor?.width||0)+12)),y:Math.max(area.y,Math.min(area.y+area.height-height,anchor?.y||area.y)),minWidth:620,minHeight:420,title:'QH Settings',backgroundColor:config.theme.background,titleBarStyle:'hiddenInset',trafficLightPosition:{x:16,y:16},show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
  const record={kind:'settings',owner,window,config,ui:{page:page||stored.page||'appearance'},errors:owner?.errors||[],exited:true,closing:false,allowClose:false};windows.set(window.id,record);
  window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());window.on('resize',()=>saveUI(record));window.on('close',()=>{clearTimeout(record.uiTimer);if(record.config.storage.enabled)try{uiStore('save',collectUI(record));}catch{}windows.delete(window.id);});window.once('ready-to-show',()=>{window.show();window.focus();});window.loadFile(join(__dirname,'settings.html'));return record;
 }
@@ -54,9 +54,9 @@ function newWindow(startPath) {
   const config=settings();let cwd=startPath || configuration.expandPath(config.defaultPath);
   try {if(!statSync(cwd).isDirectory())throw new Error('Not a folder');}catch {dialog.showErrorBox('Starting folder unavailable',`${cwd}\n\nOpening your home folder instead.`);cwd=homedir();}
   let ui={};if(config.storage.enabled&&config.restore)try{ui=uiStore('load');}catch{}const area=screen.getPrimaryDisplay().workArea;
-  const window=new BrowserWindow({width:Math.min(area.width,Math.max(520,Number(ui.width)||1150)),height:Math.min(area.height,Math.max(300,Number(ui.height)||740)),minWidth:520,minHeight:300,title:'Qesh',backgroundColor:config.theme.background,titleBarStyle:'hiddenInset',trafficLightPosition:{x:16,y:16},show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
+  const window=new BrowserWindow({width:Math.min(area.width,Math.max(520,Number(ui.width)||1150)),height:Math.min(area.height,Math.max(300,Number(ui.height)||740)),minWidth:520,minHeight:300,title:'QH',backgroundColor:config.theme.background,titleBarStyle:'hiddenInset',trafficLightPosition:{x:16,y:16},show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
   const record={kind:'shell',window,config,cwd,exited:false,closing:false,allowClose:false,errors:[],ui,startedAt:Date.now()};windows.set(window.id,record);
-  record.host=spawn(runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',[join(root,'desktop/host.mjs')],{stdio:'pipe',env:{...process.env,PATH:[join(root,'bin'),...(runtime?[runtime]:[]),process.env.PATH||'/usr/bin:/bin'].join(':'),QENTRAH_BUN:runtime?join(runtime,'bun'):process.env.QENTRAH_BUN||join(homedir(),'.bun/bin/bun'),QENTRAH_NODE:runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',QENTRAH_START_DIR:cwd,QENTRAH_DESKTOP:'1',QESH_SCROLLBACK:String(config.scrollback),QESH_MAX_WORKSPACES:String(config.storage.maxWorkspaces),QESH_RESTORE:config.restore?'1':'0',QESH_STORE_OWNER:[...windows.values()].filter(record=>record.kind==='shell').length===1?'desktop':`desktop-window-${window.id}`,QENTRAH_THEME:JSON.stringify(config.theme),SHELL:config.shell}});
+  record.host=spawn(runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',[join(root,'desktop/host.mjs')],{stdio:'pipe',env:{...process.env,PATH:[join(root,'bin'),...(runtime?[runtime]:[]),process.env.PATH||'/usr/bin:/bin'].join(':'),QENTRAH_BUN:runtime?join(runtime,'bun'):process.env.QENTRAH_BUN||join(homedir(),'.bun/bin/bun'),QENTRAH_NODE:runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',QENTRAH_START_DIR:cwd,QENTRAH_DESKTOP:'1',QH_SCROLLBACK:String(config.scrollback),QH_MAX_WORKSPACES:String(config.storage.maxWorkspaces),QH_RESTORE:config.restore?'1':'0',QH_STORE_OWNER:[...windows.values()].filter(record=>record.kind==='shell').length===1?'desktop':`desktop-window-${window.id}`,QENTRAH_THEME:JSON.stringify(config.theme),SHELL:config.shell}});
   const emit=message=>{if(message.type==='error'){record.errors.push({time:Date.now(),message:String(message.message).slice(0,1000)});record.errors=record.errors.slice(-30);}if(!window.isDestroyed())window.webContents.send('terminal:event',message);};
   createInterface({input:record.host.stdout}).on('line',line=>{try{const message=JSON.parse(line);if(message.type==='state'||message.type==='started')debug(`Host ${message.type}`);if(message.type==='exit')record.exited=true;if(message.type==='state')record.state=message;if(message.type==='state')record.sessions=(message.workspaces||[]).reduce((sum,space)=>sum+space.sessions,0);if(message.type==='started'){record.startupMs=Date.now()-record.startedAt;saveUI(record);}emit(message);}catch{emit({type:'error',message:'Invalid terminal response'});}});
   record.host.stderr.on('data',data=>{debug(String(data));emit({type:'error',message:String(data)});});record.host.on('error',error=>emit({type:'error',message:error.message}));record.host.on('exit',()=>{record.exited=true;});record.host.stdin.on('error',()=>{});
@@ -102,7 +102,7 @@ ipcMain.handle('app:action',async(event,request)=>{
   if(request.action==='diagnostics'){const owner=record.kind==='settings'?record.owner:record;return {errors:owner?.errors||[],metrics:{startupMs:owner?.startupMs||0,memoryMB:Math.round(process.memoryUsage().rss/1048576),sessions:owner?.sessions||0}};}
   if(request.action==='capture-shortcut'){record.window.webContents.setIgnoreMenuShortcuts(Boolean(request.active));return {};}
   if(request.action==='storage-info'){let bytes=0;for(const path of [databasePath,databasePath+'-wal',databasePath+'-shm'])try{bytes+=statSync(path).size;}catch{}return {path:databasePath,bytes};}
-  if(request.action==='documentation'){await shell.openExternal('https://qentrah.com/docs/qesh/'+(request.page==='keyboard'?'keyboard':'configuration'));return {};}
+  if(request.action==='documentation'){await shell.openExternal('https://qentrah.com/docs/qh/'+(request.page==='keyboard'?'keyboard':'configuration'));return {};}
 
   if(request.action==='open-config'){
     const editors=['/Applications/Visual Studio Code.app',join(homedir(),'Applications/Visual Studio Code.app'),'/Applications/Cursor.app','/Applications/Windsurf.app'];const editor=editors.find(existsSync);
@@ -121,14 +121,14 @@ function installMenu(config){
  const dispatch=action=>{const current=focused();if(action==='settings'||action==='help'){settingsWindow(current,action==='help'?'keyboard':undefined);return;}let target=current?.kind==='settings'?current.owner:current;if(target?.window.isDestroyed())target=undefined;if(!target)target=[...windows.values()].find(record=>record.kind==='shell');if(!target){newWindow();return;}if(target){target.window.show();target.window.focus();target.window.webContents.send('terminal:event',{type:'action',action});}};
  const item=(label,action)=>({label,accelerator:config.shortcuts[action]||undefined,click:()=>dispatch(action)});
  Menu.setApplicationMenu(Menu.buildFromTemplate([
-  {label:'Qesh',submenu:[item('About Qesh','about'),{role:'hide'},{role:'hideOthers'},{type:'separator'},{label:'Quit Qesh',accelerator:'Cmd+Q',click:quitAll}]},
+  {label:'QH',submenu:[item('About QH','about'),{role:'hide'},{role:'hideOthers'},{type:'separator'},{label:'Quit QH',accelerator:'Cmd+Q',click:quitAll}]},
   {label:'File',submenu:[item('New Tab','new-tab'),item('New Workspace','new-workspace'),item('New Window','new-window'),{type:'separator'},item('Settings…','settings'),{label:'Open Configuration JSON…',click:()=>dispatch('configure')},item('Commands','commands')]},
   {role:'editMenu'},{label:'View',submenu:[item('Split Right','split-right'),item('Split Down','split-down'),{role:'togglefullscreen'}]},{role:'windowMenu'},
   {label:'Help',submenu:[item('Keyboard Shortcuts','help')]},
  ]));
 }
-app.setName('Qesh');
-app.setPath('userData',process.env.QENTRAH_TEST_PROFILE || join(app.getPath('appData'),'Qentrah','Qesh-Desktop'));
+app.setName('QH');
+app.setPath('userData',process.env.QENTRAH_TEST_PROFILE || join(app.getPath('appData'),'Qentrah','QH-Desktop'));
 if(!app.requestSingleInstanceLock())app.quit();
 else {
  app.on('second-instance',()=>{const record=focused();if(record){record.window.show();record.window.focus();}else newWindow();});

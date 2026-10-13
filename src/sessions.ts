@@ -44,7 +44,7 @@ export class SessionManager extends EventEmitter {
     if('id' in message&&message.type!=='spawn'&&message.generation===undefined)message={...message,generation:this.sessions.get(message.id)?.generation};
     if (!this.closing && !this.host.stdin.destroyed) this.host.stdin.write(JSON.stringify(message) + '\n');
   }
-  scrollback=Math.max(100,Math.min(50000,Number(process.env.QESH_SCROLLBACK)||5000));
+  scrollback=Math.max(100,Math.min(50000,Number(process.env.QH_SCROLLBACK)||5000));
   setScrollback(value:number){this.scrollback=value;for(const session of this.sessions.values())session.terminal.options.scrollback=value;}
   create(id: string, cwd: string, shell: string, cols = 80, rows = 24) {
     const terminal = new Xterm.Terminal({ cols, rows, scrollback: this.scrollback, allowProposedApi: true });

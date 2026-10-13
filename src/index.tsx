@@ -9,11 +9,11 @@ import { persist } from './persistence';
 import { colors } from './ui/theme';
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
-  console.log('Qesh\n\nUsage: qesh [--help] (aliases: q-terminal, qentrah-terminal)\n\nStarts shells in the current folder. Ctrl+B then ? opens keyboard help.\nRequires macOS, Bun, and Node.js. Uses $SHELL, falling back to /bin/zsh.');
+  console.log('QH\n\nUsage: qh [--help] (aliases: q-terminal, qentrah-terminal)\n\nStarts shells in the current folder. Ctrl+B then ? opens keyboard help.\nRequires macOS, Bun, and Node.js. Uses $SHELL, falling back to /bin/zsh.');
   process.exit(0);
 }
 if (!process.stdin.isTTY || !process.stdout.isTTY) {
-  console.error('Qesh needs an interactive terminal. Run it directly in Terminal, iTerm2, or another terminal emulator.');
+  console.error('QH needs an interactive terminal. Run it directly in Terminal, iTerm2, or another terminal emulator.');
   process.exit(1);
 }
 const sessions = new SessionManager();
@@ -28,7 +28,7 @@ async function quit(code = 0, error?: unknown) {
   detachControl();
   renderer?.destroy();
   await Promise.allSettled([sessions.shutdown(), renderer?.closed ?? Promise.resolve()]);
-  if (error) console.error('Qesh:', error instanceof Error ? error.message : error);
+  if (error) console.error('QH:', error instanceof Error ? error.message : error);
   process.exit(code);
 }
 process.on('SIGINT', () => void quit());
@@ -38,8 +38,8 @@ process.on('uncaughtException', error => void quit(1, error));
 process.on('unhandledRejection', error => void quit(1, error));
 try {
   const workspace = new Workspace(sessions, process.cwd(), process.env.SHELL || '/bin/zsh');
-  if(process.env.QESH_PERSIST!=='0')detachPersistence=persist(workspace);
-  if(process.env.QESH_WORKSPACE_NAME){const found=workspace.spaces.find(space=>space.name===process.env.QESH_WORKSPACE_NAME);if(found)workspace.selectSpace(found.id);else workspace.newSpace(process.env.QESH_WORKSPACE_NAME);}
+  if(process.env.QH_PERSIST!=='0')detachPersistence=persist(workspace);
+  if(process.env.QH_WORKSPACE_NAME){const found=workspace.spaces.find(space=>space.name===process.env.QH_WORKSPACE_NAME);if(found)workspace.selectSpace(found.id);else workspace.newSpace(process.env.QH_WORKSPACE_NAME);}
   detachControl = attachDesktopControl(workspace);
   renderer = await createCliRenderer({ exitOnCtrlC: false, exitSignals: [], screenMode: 'alternate-screen', consoleMode: 'disabled', backgroundColor: colors.background, targetFps: 30, maxFps: 30, useMouse: true, enableMouseMovement: true, useKittyKeyboard: null, openConsoleOnError: false });
   renderer.on('render:error', ({ error }) => void quit(1, error));

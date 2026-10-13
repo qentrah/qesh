@@ -13,7 +13,7 @@ try{
  execFileSync('npm',['install','--global','--prefix',join(temp,'installed'),'--ignore-scripts','--no-audit','--no-fund',tarball],{stdio:'pipe'});
  const entry=join(temp,'installed/lib/node_modules/@qentrah/qh/dist/qh.mjs');
  const run=args=>execFileSync(process.execPath,[entry,...args],{encoding:'utf8',cwd:temp});
- assert.match(run(['help']),/qh projects/);assert.match(run(['projects','qesh']),/qentrah\/qesh/);assert.match(run(['clone','qesh','--dry-run']),/git.*clone/);assert.match(run(['install','Kyna','--manager','bun','--dry-run']),/--trust.*@kyna-language\/cli@preview/);assert.match(run(['fork','qesh','--dry-run']),/--clone=false/);assert.match(run(['bug','qesh','--title','Smoke test','--body','No issue is submitted','--dry-run']),/issue.*create/);
+ assert.match(run(['help']),/qh projects/);assert.match(run(['projects','qh']),/qentrah\/qh/);assert.match(run(['clone','qh','--dry-run']),/git.*clone/);assert.match(run(['install','Kyna','--manager','bun','--dry-run']),/--trust.*@kyna-language\/cli@preview/);assert.match(run(['fork','qh','--dry-run']),/--clone=false/);assert.match(run(['bug','qh','--title','Smoke test','--body','No issue is submitted','--dry-run']),/issue.*create/);
  if(spawnSync('bun',['--version'],{stdio:'ignore'}).status===0){const bunRoot=join(temp,'bun');execFileSync('bun',['add','--global',tarball],{cwd:temp,env:{...process.env,BUN_INSTALL:bunRoot},stdio:'pipe'});assert.match(execFileSync(process.execPath,[join(bunRoot,'bin/qh'),'projects','Kyna'],{encoding:'utf8'}),/qentrah\/Kyna/);}
  console.log('Standalone CLI package smoke passed: real npm installation, catalog, clone, fork, npm/Bun plans, and issue plans.');
 }finally{rmSync(temp,{recursive:true,force:true});}

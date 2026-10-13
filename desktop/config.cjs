@@ -46,15 +46,15 @@ function validate(value) {
   return config;
 }
 function expandPath(path) { return path === '~' ? homedir() : path.startsWith('~/') ? join(homedir(),path.slice(2)) : path; }
-const header='// Qesh configuration · changes in Settings are saved here.\n// Configuration: https://qentrah.com/docs/qesh/configuration\n// GUI keyboard shortcuts: https://qentrah.com/docs/qesh/keyboard\n// Ctrl+B terminal commands are separate from GUI shortcuts.\n';
+const header='// QH configuration · changes in Settings are saved here.\n// Configuration: https://qentrah.com/docs/qh/configuration\n// GUI keyboard shortcuts: https://qentrah.com/docs/qh/keyboard\n// Ctrl+B terminal commands are separate from GUI shortcuts.\n';
 function parse(text){const errors=[];const value=jsonc.parse(text,errors,{allowTrailingComma:true});if(errors.length)throw new Error(`Invalid JSON: ${jsonc.printParseErrorCode(errors[0].error)}`);return value;}
-function load(path) { if (!existsSync(path)) writeFileSync(path,header+JSON.stringify(defaults,null,2)+'\n',{mode:0o600}); const text=readFileSync(path,'utf8'),config=validate(parse(text));if(!text.includes('https://qentrah.com/docs/qesh/configuration'))writeFileSync(path,header+text,{mode:0o600});return config; }
+function load(path) { if (!existsSync(path)) writeFileSync(path,header+JSON.stringify(defaults,null,2)+'\n',{mode:0o600}); const text=readFileSync(path,'utf8'),config=validate(parse(text));if(!text.includes('https://qentrah.com/docs/qh/configuration'))writeFileSync(path,header+text,{mode:0o600});return config; }
 function save(path,text) {
  const config=validate(typeof text==='string'?parse(text):text);
  let source=existsSync(path)?readFileSync(path,'utf8'):header+'{}\n';
  // Patch changed root keys so editor comments and untouched formatting survive GUI saves.
  try{const old=parse(source);for(const key of Object.keys(old))if(!Object.hasOwn(defaults,key))source=jsonc.applyEdits(source,jsonc.modify(source,[key],undefined,{formattingOptions:{insertSpaces:true,tabSize:2}}));for(const [key,value]of Object.entries(config))if(JSON.stringify(old[key])!==JSON.stringify(value))source=jsonc.applyEdits(source,jsonc.modify(source,[key],value,{formattingOptions:{insertSpaces:true,tabSize:2}}));}catch{source=header+JSON.stringify(config,null,2)+'\n';}
- if(!source.includes('https://qentrah.com/docs/qesh/configuration'))source=header+source;
+ if(!source.includes('https://qentrah.com/docs/qh/configuration'))source=header+source;
  const temporary=path+'.tmp';writeFileSync(temporary,source,{mode:0o600});renameSync(temporary,path);return config;
 }
 module.exports={defaults,validate,expandPath,load,save,parse};

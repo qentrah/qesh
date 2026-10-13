@@ -1,4 +1,4 @@
-# Contributing to Qesh
+# Contributing to QH
 
 Open an issue to describe a bug or proposed change, then submit a focused pull request against `main`. Include the behavior before and after the change and the checks you ran. For bugs, include macOS version, architecture, Bun/Node versions, selected shell, and reproduction steps; remove private shell output before posting.
 

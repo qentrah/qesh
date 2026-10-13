@@ -7,13 +7,13 @@ Discover Qentrah projects, install supported CLIs, clone source, fork repositori
 Download the standalone package from the latest tested GitHub release:
 
 ```sh
-npm install --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+npm install --global https://github.com/qentrah/qh/releases/latest/download/qentrah-qh.tgz
 # Or:
-bun add --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+bun add --global https://github.com/qentrah/qh/releases/latest/download/qentrah-qh.tgz
 qh help
 ```
 
-If you already installed Qesh, its `qh` command includes these project commands. Use that existing command. Installing a second global `qh` may conflict with your managed launcher; do not force-overwrite it.
+If you already installed QH, its `qh` command includes these project commands. Use that existing command. Installing a second global `qh` may conflict with your managed launcher; do not force-overwrite it.
 
 ## Use
 
@@ -26,11 +26,11 @@ qh install Kyna --manager npm
 qh install Kyna --manager bun
 qh install DUI --manager bun
 qh install kyna-music --source --dir ./music
-qh clone qesh ./qesh-source
-qh fork qesh
-qh bugs qesh
-qh bug qesh
-qh bug qesh --title "Split resize issue" --body-file ./report.md
+qh clone qh ./qh-source
+qh fork qh
+qh bugs qh
+qh bug qh
+qh bug qh --title "Split resize issue" --body-file ./report.md
 qh install latest --check
 ```
 
@@ -40,4 +40,4 @@ Kyna uses its official preview npm package. Its Bun installation trusts the pack
 
 Source checkouts require Git. Forks and issues require [GitHub CLI](https://cli.github.com/) and `gh auth login`. Exit codes from Git, gh, npm, and Bun are preserved. Existing directories are never replaced. The bundled catalog includes public Qentrah repositories; `--live` fetches the current catalog from GitHub.
 
-`qh install latest` installs the Qesh macOS desktop app and its bundled runtimes. For development, run `npm pack` in this directory; it builds the standalone package from the shared CLI sources.
+`qh install latest` installs the QH macOS desktop app and its bundled runtimes. For development, run `npm pack` in this directory; it builds the standalone package from the shared CLI sources.

@@ -1,9 +1,9 @@
 ZDOTDIR=$_qentrah_user_dotdir
 [[ -r $ZDOTDIR/.zlogin ]] && source "$ZDOTDIR/.zlogin"
 # Keep bundled qh and its Node runtime available even when user dotfiles reset PATH.
-if [[ -n $QESH_BIN_PATH && -d $QESH_BIN_PATH ]]; then
+if [[ -n $QH_BIN_PATH && -d $QH_BIN_PATH ]]; then
   typeset -U path
-  path=("$QESH_BIN_PATH" "$QESH_RUNTIME_PATH" $path)
+  path=("$QH_BIN_PATH" "$QH_RUNTIME_PATH" $path)
 fi
 # This customization is scoped to Qentrah sessions. Keep an opt-out for existing prompts.
 if [[ ${QENTRAH_SHELL_STYLE:-clean} != original ]]; then

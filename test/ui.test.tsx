@@ -29,7 +29,7 @@ test('workspace renders real shell cells, routes controls and protects modal inp
     await setup.mockInput.typeText("printf '\\nUI-RENDER-OK\\n'"); setup.mockInput.pressEnter();
     await until(() => text(session).split('UI-RENDER-OK').length > 2);
     await setup.flush();
-    expect(setup.captureCharFrame()).toContain('Qesh');
+    expect(setup.captureCharFrame()).toContain('QH');
     expect(setup.captureCharFrame()).toContain('UI-RENDER-OK');
     await setup.mockInput.typeText('echo cursor');
     await until(() => text(session).includes('echo cursor'));
@@ -56,7 +56,7 @@ test('workspace renders real shell cells, routes controls and protects modal inp
     await Bun.sleep(30); await setup.waitForFrame(frame => frame.includes('Keyboard help')); expect(setup.captureCharFrame()).toContain('Keyboard help');
     setup.mockInput.pressEscape(); await Bun.sleep(30); await setup.flush();
     setup.mockInput.pressKey('b', { ctrl: true }); setup.mockInput.pressKey('q');
-    await Bun.sleep(30); await setup.waitForFrame(frame => frame.includes('Quit Qesh?')); expect(setup.captureCharFrame()).toContain('Quit Qesh?');
+    await Bun.sleep(30); await setup.waitForFrame(frame => frame.includes('Quit QH?')); expect(setup.captureCharFrame()).toContain('Quit QH?');
     setup.mockInput.pressEnter(); await Bun.sleep(30); await setup.flush(); expect(quit).toBe(false); // Cancel is the default.
     expect(workspace.tabs.length).toBe(2);
   } finally { setup.renderer.destroy(); await manager.shutdown(); }
@@ -112,7 +112,7 @@ test('desktop terminal omits duplicate chrome and fills the available shell area
     const session=manager.sessions.get(workspace.tab.focused)!;
     await until(()=>session.status==='running' && text(session).includes('❯'));await setup.flush();
     await setup.mockInput.typeText('echo clean');await until(()=>text(session).includes('echo clean'));await setup.flush();
-    expect(setup.captureCharFrame()).not.toContain('Qesh');expect(setup.captureCharFrame()).not.toContain('Ctrl+B then:');
+    expect(setup.captureCharFrame()).not.toContain('QH');expect(setup.captureCharFrame()).not.toContain('Ctrl+B then:');
     expect(session.terminal.rows).toBe(25);expect(setup.renderer.getCursorState().y).toBe(session.terminal.buffer.active.cursorY+1);
   } finally { if(original===undefined)delete process.env.QENTRAH_DESKTOP;else process.env.QENTRAH_DESKTOP=original;setup.renderer.destroy();await manager.shutdown(); }
 },15000);

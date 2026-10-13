@@ -16,7 +16,7 @@ export class Workspace extends EventEmitter {
   constructor(readonly sessions: SessionManager, readonly cwd: string, readonly shell: string) {
     super(); this.on('change', () => { this.revision++; }); sessions.on('change', () => this.emit('change')); this.newSpace('Workspace');
   }
-  maxWorkspaces=Number(process.env.QESH_MAX_WORKSPACES)||30;
+  maxWorkspaces=Number(process.env.QH_MAX_WORKSPACES)||30;
   newSpace(name='Workspace') { if(this.spaces.length>=this.maxWorkspaces){this.emit('notice','Workspace limit reached. Change it in Settings → Storage.');return;} const base=cleanName(name);let unique=base,n=2;while(this.spaces.some(space=>space.name===unique))unique=base.slice(0,35)+' '+n++;this.spaces.push({id:randomUUID(),name:unique,tabs:[],active:0,groups:[]});this.selected=this.spaces.length-1;this.newTab(); }
   selectSpace(id:string) { const index=this.spaces.findIndex(space=>space.id===id);if(index>=0){this.selected=index;this.emit('change');} }
   renameSpace(id:string,name:string) { const space=this.spaces.find(space=>space.id===id);if(space){space.name=cleanName(name);this.emit('change');} }

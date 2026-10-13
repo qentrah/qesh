@@ -73,9 +73,9 @@
     "url": "https://github.com/qentrah/qentrah-languages"
   },
   {
-    "name": "qesh",
-    "description": "Qentrah Shell \u2014 a clean macOS terminal workspace with real shells, tabs, groups, and resizable split panes.",
-    "url": "https://github.com/qentrah/qesh"
+    "name": "qh",
+    "description": "QH \u2014 a clean macOS terminal workspace with real shells, tabs, groups, and resizable split panes.",
+    "url": "https://github.com/qentrah/qh"
   },
   {
     "name": "qh-pixels",

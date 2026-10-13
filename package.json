@@ -1,12 +1,11 @@
 {
-  "name": "qesh",
-  "version": "0.6.3",
+  "name": "qh",
+  "version": "0.6.10",
   "type": "module",
   "bin": {
-    "qesh": "./bin/qesh",
+    "qh": "./bin/qh",
     "qentrah-terminal": "./bin/qentrah-terminal",
-    "q-terminal": "./bin/q-terminal",
-    "qh": "./bin/qh"
+    "q-terminal": "./bin/q-terminal"
   },
   "scripts": {
     "start": "bun src/index.tsx",
@@ -45,10 +44,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/qentrah/qesh.git"
+    "url": "https://github.com/qentrah/qh.git"
   },
-  "homepage": "https://qentrah.com/qesh",
+  "homepage": "https://qentrah.com/qh",
   "bugs": {
-    "url": "https://github.com/qentrah/qesh/issues"
+    "url": "https://github.com/qentrah/qh/issues"
   }
 }

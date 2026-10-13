@@ -55,7 +55,7 @@ createInterface({ input: process.stdin }).on('line', line => {
       accessSync(message.cwd, constants.R_OK);
       const session = pty.spawn(message.shell, message.args, {
         cwd: message.cwd, cols: message.cols, rows: message.rows,
-        name: 'xterm-256color', env: { ...process.env, ...(basename(message.shell) === 'zsh' ? { ZDOTDIR: zshConfig, QENTRAH_USER_ZDOTDIR: process.env.ZDOTDIR || process.env.HOME } : {}), QESH_BIN_PATH:fileURLToPath(new URL('../bin',import.meta.url)),QESH_RUNTIME_PATH:dirname(process.execPath),TERM: 'xterm-256color', COLORTERM: 'truecolor', QENTRAH_TERMINAL: '1' },
+        name: 'xterm-256color', env: { ...process.env, ...(basename(message.shell) === 'zsh' ? { ZDOTDIR: zshConfig, QENTRAH_USER_ZDOTDIR: process.env.ZDOTDIR || process.env.HOME } : {}), QH_BIN_PATH:fileURLToPath(new URL('../bin',import.meta.url)),QH_RUNTIME_PATH:dirname(process.execPath),TERM: 'xterm-256color', COLORTERM: 'truecolor', QENTRAH_TERMINAL: '1' },
       });
       sessions.set(id, session);generations.set(session,message.generation);
       live.add(session);

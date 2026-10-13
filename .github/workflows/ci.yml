@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: qesh-${{ github.ref }}
+  group: qh-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   prepare:
@@ -67,31 +67,31 @@ jobs:
       - run: node scripts/smoke-desktop.mjs
       - run: node scripts/smoke-restore.mjs
       - name: Build standalone app
-        run: node scripts/build-macos-app.mjs dist/Qesh.app
+        run: node scripts/build-macos-app.mjs dist/QH.app
       - name: Smoke-test bundled runtimes and shell sessions
         env:
-          QENTRAH_NODE: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/node
-          QENTRAH_BUN: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/bun
-          QENTRAH_DESKTOP_HOST: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/terminal/desktop/host.mjs
+          QENTRAH_NODE: ${{ github.workspace }}/dist/QH.app/Contents/Resources/runtime/node
+          QENTRAH_BUN: ${{ github.workspace }}/dist/QH.app/Contents/Resources/runtime/bun
+          QENTRAH_DESKTOP_HOST: ${{ github.workspace }}/dist/QH.app/Contents/Resources/terminal/desktop/host.mjs
         run: |
           node scripts/smoke-desktop.mjs
           node scripts/smoke-restore.mjs
       - name: Verify signature after runtime test
-        run: codesign --verify --deep --strict dist/Qesh.app
+        run: codesign --verify --deep --strict dist/QH.app
       - name: Package app, sidecar configuration, and checksum
         env:
           BUILD_ARCH: ${{ matrix.arch }}
         working-directory: dist
         run: |
-          ditto -c -k --sequesterRsrc --keepParent Qesh.app "Qesh-macOS-${BUILD_ARCH}.zip"
-          zip -j "Qesh-macOS-${BUILD_ARCH}.zip" qesh.config.json
-          shasum -a 256 "Qesh-macOS-${BUILD_ARCH}.zip" > "Qesh-macOS-${BUILD_ARCH}.sha256"
+          ditto -c -k --sequesterRsrc --keepParent QH.app "QH-macOS-${BUILD_ARCH}.zip"
+          zip -j "QH-macOS-${BUILD_ARCH}.zip" qh.config.json
+          shasum -a 256 "QH-macOS-${BUILD_ARCH}.zip" > "QH-macOS-${BUILD_ARCH}.sha256"
       - uses: actions/upload-artifact@v4
         with:
-          name: Qesh-macOS-${{ matrix.arch }}
+          name: QH-macOS-${{ matrix.arch }}
           path: |
-            dist/Qesh-macOS-*.zip
-            dist/Qesh-macOS-*.sha256
+            dist/QH-macOS-*.zip
+            dist/QH-macOS-*.sha256
           if-no-files-found: error
           compression-level: 0
           retention-days: 30
@@ -130,7 +130,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          pattern: Qesh-macOS-*
+          pattern: QH-macOS-*
           path: release
           merge-multiple: true
       - uses: actions/download-artifact@v4
@@ -145,9 +145,9 @@ jobs:
           RELEASE_PREVIEW: ${{ needs.prepare.outputs.preview }}
         run: |
           for arch in arm64 x64; do
-            test -s "release/Qesh-macOS-$arch.zip"
-            test -s "release/Qesh-macOS-$arch.sha256"
-            (cd release && sha256sum -c "Qesh-macOS-$arch.sha256")
+            test -s "release/QH-macOS-$arch.zip"
+            test -s "release/QH-macOS-$arch.sha256"
+            (cd release && sha256sum -c "QH-macOS-$arch.sha256")
           done
           (cd release && sha256sum -c qentrah-qh.sha256)
           cp scripts/install.sh release/install.sh
@@ -157,7 +157,7 @@ jobs:
               exit 0
             fi
           else
-            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "Qesh $RELEASE_TAG" --generate-notes
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "QH $RELEASE_TAG" --generate-notes
           fi
           gh release upload "$RELEASE_TAG" release/*.zip release/*.sha256 release/*.tgz release/install.sh --clobber
           gh release edit "$RELEASE_TAG" --draft=false --prerelease="$RELEASE_PREVIEW"

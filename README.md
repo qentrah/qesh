@@ -1,27 +1,29 @@
-# Qesh
+# QH
 
-**Qentrah Shell.** A clean, open-source macOS terminal workspace with real shells, tabs, groups, and resizable split panes. Use it as a desktop app or run the OpenTUI interface inside your existing terminal.
+<img src="src/assets/icons/qh.png" width="96" height="96" alt="QH square Q terminal icon">
+
+**QH by Qentrah.** A clean, open-source macOS terminal workspace with real shells, tabs, groups, and resizable split panes. Use it as a desktop app or run the OpenTUI interface inside your existing terminal.
 
 Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anomalyco/opentui), React, TypeScript, and adapted [TermCN](https://www.termcn.dev/) components. MIT licensed.
 
-[Website & screenshots](https://qentrah.com/qesh) · [Download the macOS app](https://github.com/qentrah/qesh/releases) · [Report an issue](https://github.com/qentrah/qesh/issues) · [Contribute](CONTRIBUTING.md)
+[Website & screenshots](https://qentrah.com/qh) · [Download the macOS app](https://github.com/qentrah/qh/releases) · [Report an issue](https://github.com/qentrah/qh/issues) · [Contribute](CONTRIBUTING.md)
 
-![Qesh on macOS with four live Pi, OpenCode, and Codex sessions](docs/images/qesh-sessions.png)
+![QH on macOS with four live shell sessions](docs/images/qh-sessions.png)
 
 Drag a split line to resize that branch. Drag the center junction to resize all connected splits together, or use the arrow keys while the junction is focused.
 
 ## Install and quick commands
 
-Qesh includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+QH includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
-curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
-sh /tmp/qesh-install.sh
+curl -fsSL https://qentrah.com/qh/install.sh -o /tmp/qh-install.sh
+sh /tmp/qh-install.sh
 ~/.local/bin/qh help
 ~/.local/bin/qh
 ```
 
-The installer downloads the native Apple Silicon or Intel release from GitHub, verifies SHA-256 and the app signature, and installs into a versioned local folder. It creates `qh` and `qesh` launchers in `~/.local/bin`; add that folder to your shell PATH if necessary. It refuses to replace unrelated commands. `QESH_BIN_DIR` and `QESH_INSTALL_DIR` choose other destinations. The app is locally signed and not notarized.
+The installer downloads the native Apple Silicon or Intel release from GitHub, verifies SHA-256 and the app signature, and installs into a versioned local folder. It creates a `qh` launcher in `~/.local/bin`; add that folder to your shell PATH if necessary. It refuses to replace unrelated commands. `QH_BIN_DIR` and `QH_INSTALL_DIR` choose other destinations. The app is locally signed and not notarized.
 
 ```sh
 qh help               # List commands
@@ -29,7 +31,7 @@ qh search update      # Search built-in and custom commands
 qh config             # Open the global configuration
 qh config path        # Print its path
 qh config validate    # Validate JSON and settings
-qh update --check     # Check Qesh releases
+qh update --check     # Check QH releases
 qh update             # Update a managed install if a newer version exists
 qh update-all --dry-run
 qh update-all         # Run only the updates you configured
@@ -37,7 +39,7 @@ qh workspace list     # List saved workspace records
 qh workspace Research # Open a named CLI workspace
 ```
 
-`gh` remains GitHub CLI. Qesh uses `qh`. For a source checkout, run `./bin/qh`; update the checkout with Git rather than the managed installer. Node.js 22.13+ and Bun 1.3.5+ are required for source development. Packaged downloads supply their runtimes.
+`gh` remains GitHub CLI. QH uses `qh`. For a source checkout, run `./bin/qh`; update the checkout with Git rather than the managed installer. Node.js 22.13+ and Bun 1.3.5+ are required for source development. Packaged downloads supply their runtimes.
 
 ### Qentrah projects from your terminal
 
@@ -51,10 +53,10 @@ qh project Kyna
 qh install Kyna --manager bun --dry-run
 qh install DUI --manager npm
 qh install kyna-music --source --dir ./music
-qh clone qesh ./qesh-source
-qh fork qesh
-qh bugs qesh
-qh bug qesh --title "Resize issue" --body-file ./report.md
+qh clone qh ./qh-source
+qh fork qh
+qh bugs qh
+qh bug qh --title "Resize issue" --body-file ./report.md
 ```
 
 Remove `--dry-run` to execute an inspected action. Source checkouts require Git; forks and issues require GitHub CLI and `gh auth login`. Bug reports contain only text you provide. Repositories without published CLIs are checked out from source; their build instructions are printed. `qh projects --live` fetches the current public catalog.
@@ -62,16 +64,16 @@ Remove `--dry-run` to execute an inspected action. Source checkouts require Git;
 For a lightweight CLI without the desktop app, install the standalone package with npm or Bun:
 
 ```sh
-npm install --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+npm install --global https://github.com/qentrah/qh/releases/latest/download/qentrah-qh.tgz
 # Or:
-bun add --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+bun add --global https://github.com/qentrah/qh/releases/latest/download/qentrah-qh.tgz
 ```
 
-An existing Qesh installation already supplies `qh`; use that command rather than overwriting its launcher. See [standalone CLI documentation](packages/qh/README.md).
+An existing QH installation already supplies `qh`; use that command rather than overwriting its launcher. See [standalone CLI documentation](packages/qh/README.md).
 
 ### Custom commands and CLI updates
 
-Add command objects to your global configuration. No CLI updates are enabled by default. Inside a Qesh shell, typing `qh` shows help rather than opening a nested workspace. Zsh Tab completion lists built-in and configured command names.
+Add command objects to your global configuration. No CLI updates are enabled by default. Inside a QH shell, typing `qh` shows help rather than opening a nested workspace. Zsh Tab completion lists built-in and configured command names.
 
 ```json
 {
@@ -94,9 +96,11 @@ Run `qh dev` to execute a configured command with your shell and permissions. De
 
 ### Local workspace restore
 
-Workspace layouts are stored in `~/Library/Application Support/Qentrah/Qesh/workspaces.sqlite`. There is no server database or synchronization. The store records workspaces, tabs, groups, split ratios, focus, colors, session labels, and working directories. Directory detection follows the shell's current directory through macOS process information. Missing folders fall back to the home folder.
+Workspace layouts are stored in `~/Library/Application Support/Qentrah/QH/workspaces.sqlite`. There is no server database or synchronization. The store records workspaces, tabs, groups, split ratios, focus, colors, session labels, and working directories. Directory detection follows the shell's current directory through macOS process information. Missing folders fall back to the home folder.
 
-On reopen, Qesh creates fresh shell processes in those folders. It does not revive exited programs, reuse their PIDs, replay commands, or restore terminal output. Set `restore` to `false` for a fresh layout. Independent windows have separate saved records. Closing a workspace removes it from that record.
+On first launch after the QH rename, existing settings and saved workspaces are imported from the previous application data folder. Installed versions stay in place. `QH_DATA_DIR` selects an isolated data folder and bypasses this import.
+
+On reopen, QH creates fresh shell processes in those folders. It does not revive exited programs, reuse their PIDs, replay commands, or restore terminal output. Set `restore` to `false` for a fresh layout. Independent windows have separate saved records. Closing a workspace removes it from that record.
 
 The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it directly in the sidebar; Enter saves and Escape cancels. The bottom toolbar provides New, Commands, Settings, and the global menu. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
 
@@ -121,7 +125,7 @@ Layouts restore from the local SQLite store unless `restore` is disabled. Reopen
 
 ## Download the desktop app
 
-Get **Qesh-macOS-arm64.zip** from [Releases](https://github.com/qentrah/qesh/releases), extract it, and open **Qesh.app**. You can move the app to Applications or add it to the Dock. Settings are stored in your local Application Support folder; no sidecar file is needed.
+Get **QH-macOS-arm64.zip** from [Releases](https://github.com/qentrah/qh/releases), extract it, and open **QH.app**. You can move the app to Applications or add it to the Dock. Settings are stored in your local Application Support folder; no sidecar file is needed.
 
 The supplied build targets **Apple Silicon macOS** and includes Electron, Bun, Node.js, and native terminal dependencies. No separate runtime install is needed for the downloadable app. These early builds are locally signed and **not notarized**. The repository contains the source and reproducible build instructions.
 
@@ -130,8 +134,8 @@ The supplied build targets **Apple Silicon macOS** and includes Electron, Bun, N
 Requires **macOS**, **Bun 1.3.5+**, and **Node.js 22.13+** on PATH. Development is verified with Bun 1.3.5 and Node.js 24.12.0.
 
 ```sh
-git clone https://github.com/qentrah/qesh.git
-cd qesh
+git clone https://github.com/qentrah/qh.git
+cd qh
 bun install
 
 # Run inside your existing terminal
@@ -148,10 +152,10 @@ To use the short CLI command anywhere:
 ```sh
 bun link
 cd /path/to/your/project
-qesh
+qh
 ```
 
-`qesh --help` prints usage. The older `q-terminal` and `qentrah-terminal` command aliases remain available. The legacy Bun aliases use `$SHELL`, falling back to `/bin/zsh`; global configuration selects the desktop and `qh` shell.
+`qh --help` prints usage. The older `q-terminal` and `qentrah-terminal` command aliases remain available. The legacy Bun aliases use `$SHELL`, falling back to `/bin/zsh`; global configuration selects the desktop and `qh` shell.
 
 ### Native setup
 
@@ -212,7 +216,9 @@ Pane minimums are 20 columns and 5 rows. When a window is too small for the spli
 
 ## Configuration
 
-**Settings…** opens a separate, resizable window with Appearance, Terminal, Storage, Keyboard, Commands, Updates, and About pages. Changes save automatically and show **Saved** after validation and an atomic write. **Open Configuration JSON** opens `~/Library/Application Support/Qentrah/Qesh/config.jsonc` in VS Code, Cursor, Windsurf, or the associated editor. JSONC accepts comments and trailing commas; documentation links are included at the top. Editor changes are reloaded automatically in open desktop windows. Invalid edits leave the active settings unchanged. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
+**Settings…** opens a separate, resizable window with Appearance, Terminal, Storage, Keyboard, Commands, Updates, and About pages. Changes save automatically and show **Saved** after validation and an atomic write. **Open Configuration JSON** opens `~/Library/Application Support/Qentrah/QH/config.jsonc` in VS Code, Cursor, Windsurf, or the associated editor. JSONC accepts comments and trailing commas; documentation links are included at the top. Editor changes are reloaded automatically in open desktop windows. Invalid edits leave the active settings unchanged. The previous sidecar `qh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
+
+![QH About page with square Q terminal logo](docs/images/qh-about.png)
 
 ```json
 {
@@ -245,7 +251,7 @@ Zsh command names use yellow, strings orange, keywords purple, variables/options
 A scoped ZDOTDIR wrapper loads the user's `.zshenv`, `.zprofile`, `.zshrc`, and `.zlogin` in order. It does not rewrite dotfiles. History stays in the user's normal location rather than the app bundle. To retain your original prompt and highlighting:
 
 ```sh
-QENTRAH_SHELL_STYLE=original qesh
+QENTRAH_SHELL_STYLE=original qh
 ```
 
 ## Build the macOS app
@@ -255,10 +261,10 @@ bun install
 bun run build:app
 ```
 
-This builds `../Qesh.app` and places a default `qesh.config.json` beside it if one does not exist. To choose another path:
+This builds `../QH.app` and places a default `qh.config.json` beside it if one does not exist. To choose another path:
 
 ```sh
-node scripts/build-macos-app.mjs /path/to/Qesh.app
+node scripts/build-macos-app.mjs /path/to/QH.app
 ```
 
 The build refuses to overwrite an existing app. It bundles the local Bun and Node binaries, dependencies, source, licenses, and Qentrah icon, then applies and verifies a local signature. Build on the Mac architecture you intend to distribute; the current release includes native arm64 and x64 builds. Signing with a Developer ID and notarization are not part of this build script.
@@ -287,20 +293,20 @@ node scripts/smoke-restore.mjs
 bun run build:desktop
 ```
 
-The [macOS checks and builds workflow](https://github.com/qentrah/qesh/actions/workflows/ci.yml) runs these checks on Apple Silicon (`arm64`) and Intel (`x64`), builds a standalone app on each native runner, smoke-tests its bundled Node/Bun runtimes and shell sessions, and verifies the app signature afterward. Pull requests run the checks without publishing. Every push to `main`, including a merged pull request, builds both native Mac architectures and automatically publishes the next stable version after both jobs succeed. The workflow embeds that version in the app, verifies the ZIP checksums, uploads both ZIPs, checksums, and `install.sh` to a draft, then publishes it. No manual tag or website version update is needed. Explicit `v*` tags also publish; tags with a prerelease suffix remain previews. Reruns preserve assets of an already published release. Build artifacts are retained for 30 days. Builds use a local signature and are not notarized. Tests cover shell history/completion, Unicode, colors, multiline paste, Ctrl+C, vim/top, tab isolation, PID preservation, docking/detaching, config validation, geometry, narrow-window restoration, confirmation, copying, startup, and cleanup. Clipboard tests inject an adapter without changing the system clipboard. Smoke checks run real PTYs and verify cursor placement and process cleanup.
+The [macOS checks and builds workflow](https://github.com/qentrah/qh/actions/workflows/ci.yml) runs these checks on Apple Silicon (`arm64`) and Intel (`x64`), builds a standalone app on each native runner, smoke-tests its bundled Node/Bun runtimes and shell sessions, and verifies the app signature afterward. Pull requests run the checks without publishing. Every push to `main`, including a merged pull request, builds both native Mac architectures and automatically publishes the next stable version after both jobs succeed. The workflow embeds that version in the app, verifies the ZIP checksums, uploads both ZIPs, checksums, and `install.sh` to a draft, then publishes it. No manual tag or website version update is needed. Explicit `v*` tags also publish; tags with a prerelease suffix remain previews. Reruns preserve assets of an already published release. Build artifacts are retained for 30 days. Builds use a local signature and are not notarized. Tests cover shell history/completion, Unicode, colors, multiline paste, Ctrl+C, vim/top, tab isolation, PID preservation, docking/detaching, config validation, geometry, narrow-window restoration, confirmation, copying, startup, and cleanup. Clipboard tests inject an adapter without changing the system clipboard. Smoke checks run real PTYs and verify cursor placement and process cleanup.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions and [AGENTS.md](AGENTS.md) for agent instructions. Bugs and feature requests belong in [Issues](https://github.com/qentrah/qesh/issues).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions and [AGENTS.md](AGENTS.md) for agent instructions. Bugs and feature requests belong in [Issues](https://github.com/qentrah/qh/issues).
 
 ## License and credits
 
-Qesh's original source is [MIT](LICENSE), copyright Qentrah. Third-party code retains its own licenses; see [NOTICE.md](NOTICE.md), the vendored license files, and notices bundled with the desktop app. Qentrah's logo remains a brand mark; the software license does not grant trademark rights.
+QH's original source is [MIT](LICENSE), copyright Qentrah. Third-party code retains its own licenses; see [NOTICE.md](NOTICE.md), the vendored license files, and notices bundled with the desktop app. The QH logo remains a brand mark; the software license does not grant trademark rights.
 
 
 ### Desktop settings and shortcuts
 
 Use the gear in the sidebar or Cmd+, to open Settings. Settings opens in a separate native window; closing it preserves the terminal sessions. Rename workspaces, tabs, pane labels, and groups inline with a double-click. Tab and workspace Color menus offer Cyan, Blue, Green, Amber, Violet, and Rose, Default, plus the macOS color chooser.
 
-GUI `shortcuts` map action names to Electron accelerators, such as `"new-tab": "Cmd+T"`. Record them on the Keyboard page; Backspace disables a binding, Escape cancels, and duplicate or reserved editing/shell keys are rejected. This does not change the terminal Ctrl+B prefix. The config file links to [configuration](https://qentrah.com/docs/qesh/configuration) and [keyboard customization](https://qentrah.com/docs/qesh/keyboard).
+GUI `shortcuts` map action names to Electron accelerators, such as `"new-tab": "Cmd+T"`. Record them on the Keyboard page; Backspace disables a binding, Escape cancels, and duplicate or reserved editing/shell keys are rejected. This does not change the terminal Ctrl+B prefix. The config file links to [configuration](https://qentrah.com/docs/qh/configuration) and [keyboard customization](https://qentrah.com/docs/qh/keyboard).
 
 `storage.enabled` enables local SQLite layout saves; `restore` enables restore on launch. `storage.saveDelayMs` batches saves (100–5000 ms), `storage.maxWorkspaces` limits new workspaces (1–100), and `scrollback` bounds per-shell emulator history (100–50000 lines). Existing workspaces survive lowering the creation limit. SQLite stores layout metadata and folders; terminal output, running processes, secrets, and environment variables are not saved. Storage shows the database path and size. Font, colors, tab position, scrollback, and creation limits apply immediately; shell and starting folder apply to new windows.
 
@@ -320,6 +326,6 @@ Click the active Terminal button to collapse the sidebar into a narrow action ra
 
 ### Install and update release channels
 
-`qh install latest` and `qh install stable` install the latest complete stable release. `qh install latest version` is an alias. Use `qh install v0.6.3` for a specific release or `qh install preview` to include previews. Add `--check` to resolve the version without installing. `qh update` follows the configured channel; `qh update stable` or `qh update latest` selects stable releases. Updates never downgrade a newer install. Explicit installs may select an older version.
+`qh install latest` and `qh install stable` install the latest complete stable release. `qh install latest version` is an alias. Use `qh install v0.6.10` for a specific release or `qh install preview` to include previews. Add `--check` to resolve the version without installing. `qh update` follows the configured channel; `qh update stable` or `qh update latest` selects stable releases. Updates never downgrade a newer install. Explicit installs may select an older version.
 
 The bootstrap script accepts the same `latest`, `stable`, `preview`, or version selector, resolves it from GitHub, and verifies the downloaded app checksum and signature. The public installer URL redirects to the installer shipped in the latest stable GitHub Actions release. The app’s update check uses the same complete-release selection rules as the CLI.

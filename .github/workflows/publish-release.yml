@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: Qesh-macOS-*
+          pattern: QH-macOS-*
           merge-multiple: true
           path: release
           run-id: ${{ inputs.run_id }}
@@ -31,6 +31,6 @@ jobs:
         run: |
           gh release view "$RELEASE_TAG"
           cd release
-          shasum -a 256 -c Qesh-macOS-arm64.sha256
-          shasum -a 256 -c Qesh-macOS-x64.sha256
+          shasum -a 256 -c QH-macOS-arm64.sha256
+          shasum -a 256 -c QH-macOS-x64.sha256
           gh release upload "$RELEASE_TAG" ./*.zip ./*.sha256 --clobber

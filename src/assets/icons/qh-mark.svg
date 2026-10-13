@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="544" height="544" viewBox="240 240 544 544">
+  <title>QH square Q with split cursor</title>
+  <g fill="#f4f4f5">
+    <path d="M272 272 H720 V608 H632 V360 H360 V632 H608 V720 H272 Z"/>
+    <rect x="640" y="640" width="112" height="112"/>
+  </g>
+</svg>

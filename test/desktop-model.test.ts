@@ -10,7 +10,7 @@ import type {SessionManager} from '../src/sessions';
 const require=createRequire(import.meta.url);
 const config=require('../desktop/config.cjs');
 test('configuration validates settings and preserves the previous JSON on invalid edits',()=>{
- const folder=mkdtempSync(join(tmpdir(),'q-config-'));const path=join(folder,'qesh.config.json');
+ const folder=mkdtempSync(join(tmpdir(),'q-config-'));const path=join(folder,'qh.config.json');
  try{expect(config.load(path).defaultPath).toBe('~');config.save(path,JSON.stringify({defaultPath:'/tmp',fontSize:18,tabsPosition:'top',theme:{primary:'#abcdef'}}));expect(config.load(path).theme.primary).toBe('#abcdef');const before=readFileSync(path,'utf8');expect(()=>config.save(path,'{"fontSize":99}')).toThrow();expect(readFileSync(path,'utf8')).toBe(before);expect(()=>config.validate({theme:{background:'red'}})).toThrow();expect(()=>config.validate({defaultPath:'relative'})).toThrow();}finally{rmSync(folder,{recursive:true,force:true});}
 });
 test('group, reorder, dock and detach keep the same shell owners',()=>{
@@ -19,7 +19,7 @@ test('group, reorder, dock and detach keep the same shell owners',()=>{
 });
 test('JSONC saves preserve editor comments and reject conflicting GUI shortcuts and storage limits',()=>{
  const folder=mkdtempSync(join(tmpdir(),'qh-jsonc-')),path=join(folder,'config.jsonc');try{
-  const {writeFileSync}=require('node:fs');writeFileSync(path,'// My local note\n{\n  "fontSize": 14, // monospace size\n  "restore": true,\n}\n');const loaded=config.load(path);expect(loaded.shortcuts['new-tab']).toBe('Cmd+T');config.save(path,{...loaded,fontSize:16});const text=readFileSync(path,'utf8');expect(text).toContain('// My local note');expect(text).toContain('// monospace size');expect(text).toContain('https://qentrah.com/docs/qesh/keyboard');expect(config.load(path).fontSize).toBe(16);
+  const {writeFileSync}=require('node:fs');writeFileSync(path,'// My local note\n{\n  "fontSize": 14, // monospace size\n  "restore": true,\n}\n');const loaded=config.load(path);expect(loaded.shortcuts['new-tab']).toBe('Cmd+T');config.save(path,{...loaded,fontSize:16});const text=readFileSync(path,'utf8');expect(text).toContain('// My local note');expect(text).toContain('// monospace size');expect(text).toContain('https://qentrah.com/docs/qh/keyboard');expect(config.load(path).fontSize).toBe(16);
   const before=readFileSync(path,'utf8');expect(()=>config.save(path,{...loaded,shortcuts:{...loaded.shortcuts,commands:'Cmd+T'}})).toThrow('Duplicate');expect(readFileSync(path,'utf8')).toBe(before);expect(()=>config.validate({shortcuts:{'new-tab':'Ctrl+C'}})).toThrow('reserved');expect(()=>config.validate({storage:{saveDelayMs:0}})).toThrow();expect(()=>config.validate({scrollback:100000})).toThrow();expect(config.validate({shortcuts:{commands:''},storage:{enabled:false}}).storage.enabled).toBe(false);
  }finally{rmSync(folder,{recursive:true,force:true});}
 });

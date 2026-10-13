@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import Xterm from '@xterm/headless';
 const hostPath = process.env.QENTRAH_DESKTOP_HOST || fileURLToPath(new URL('../desktop/host.mjs', import.meta.url));
 const terminal = new Xterm.Terminal({ cols: 110, rows: 30, allowProposedApi: true });
-const host = spawn(process.env.QENTRAH_NODE || 'node', [hostPath], { env: { ...process.env, QESH_PERSIST: '0', QENTRAH_START_DIR: process.cwd() }, stdio: 'pipe' });
+const host = spawn(process.env.QENTRAH_NODE || 'node', [hostPath], { env: { ...process.env, QH_PERSIST: '0', QENTRAH_START_DIR: process.cwd() }, stdio: 'pipe' });
 let closed, failure, workspace;
 const send = message => host.stdin.write(JSON.stringify(message) + '\n');
 terminal.onData(data => send({ type: 'input', data }));
@@ -51,7 +51,7 @@ try {
  const pane=workspace.tabs[0].sessions.find(session=>session.pid===secondPid).id;
  send({type:'control',command:{action:'detach-pane',id:pane}});
  await until(() => workspace.tabs.length===2);
- send({ type: 'input', data: '\x02q' }); await until(() => frame().includes('Quit Qesh?'));
+ send({ type: 'input', data: '\x02q' }); await until(() => frame().includes('Quit QH?'));
  send({ type: 'input', data: '\t' }); await new Promise(resolve => setTimeout(resolve, 60));send({ type: 'input', data: '\r' });
  send({ type: 'shutdown' }); await until(() => closed !== undefined);
  assert.equal(closed, 0);

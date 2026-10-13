@@ -158,14 +158,14 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else if (key.name === 'r') { setRename(currentTab.name); setModal({ kind: 'rename' }); }
     else if (key.name === 'x') confirm('Close this shell?', [id], closePane);
     else if (key.name === 'w') confirm('Close this tab and its shells?', leaves(currentTab.tree), closeTab);
-    else if (key.name === 'q') confirm('Quit Qesh?', workspace.spaces.flatMap(space=>space.tabs.flatMap(t=>leaves(t.tree))), onQuit);
+    else if (key.name === 'q') confirm('Quit QH?', workspace.spaces.flatMap(space=>space.tabs.flatMap(t=>leaves(t.tree))), onQuit);
     else if (key.name === 'pageup' || key.name === 'pagedown') { workspace.sessions.scroll(id, (key.name === 'pageup' ? 1 : -1) * Math.max(1, (session?.terminal.rows ?? 24) - 2)); update(); }
     else if (key.name === 'y') copySelection();
     else if (key.name === 'return' || key.name === 'enter') workspace.sessions.restart(id);
     else if (command === '?' || key.name === '?') setModal({ kind: 'help' });
     else setNotice(`Unknown workspace command. Ctrl+B ? opens help.`);
   });
-  if (!tab || !layout) return <text>Closing Qesh…</text>;
+  if (!tab || !layout) return <text>Closing QH…</text>;
   const paneEntries = [...layout.panes];
   const focusedSession = workspace.sessions.sessions.get(tab.focused);
   const modalWidth = Math.max(8, Math.min(width - 2, 68));
@@ -177,7 +177,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       if (event.type === 'up' || event.type === 'drag-end' || (event.type === 'down' && event.target?.id !== `divider-${divider.id}` && event.target?.parent?.id !== `divider-${divider.id}`)) draggingDivider.current = null;
     }}>
       {!desktop && <><box height={1} flexDirection="row" backgroundColor={colors.surface} overflow="hidden">
-        <text fg={colors.foreground}><b>{' Qesh '}</b></text>
+        <text fg={colors.foreground}><b>{' QH '}</b></text>
         <Tabs width={Math.max(1, width - 6)} tabs={workspace.tabs.map(t => ({ key: t.id, label: t.name }))} activeTab={tab.id} onTabChange={id => { if (!modalRef.current) workspace.switchTab(workspace.tabs.findIndex(t => t.id === id)); }} />
       </box>
       <text height={1} wrapMode="none" fg={colors.muted}>{` ${basename(focusedSession?.shell ?? workspace.shell)} · ${displayCwd}${layout.collapsed ? ' · Focused pane only — enlarge to restore splits' : ''}`}</text></>}
@@ -211,7 +211,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
           <text fg={colors.muted}>Enter saves · Esc cancels</text>
         </box>}
         {modal.kind === 'help' && <box flexDirection="column" padding={1}>
-          <text fg={colors.primary}><b>Qesh · Keyboard help</b></text>
+          <text fg={colors.primary}><b>QH · Keyboard help</b></text>
           <text fg={colors.muted}>Press Ctrl+B, release, then a command:</text>
           <scrollbox height={Math.max(1, Math.min(height - 5, 14))} scrollY focused>
             <Help keymap={KEYMAP} />
