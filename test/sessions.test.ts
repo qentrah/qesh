@@ -88,7 +88,7 @@ test('zsh history, completion, multiline paste, interruption, vim and top', asyn
     manager.input(session.id, "vim -u NONE -i NONE -n\r");
     await until(() => session.terminal.buffer.active.type === 'alternate');
     const pid = session.pid; manager.resize(session.id, 72, 18);
-    manager.input(session.id, 'iQentrah vim test\x1b'); await Bun.sleep(100);
+    manager.input(session.id, 'iQentrah vim test\x1b'); await until(()=>text(session).includes('Qentrah vim test'));
     expect(text(session)).toContain('Qentrah vim test');
     manager.input(session.id, ':q!\r');
     await until(() => session.terminal.buffer.active.type === 'normal');
