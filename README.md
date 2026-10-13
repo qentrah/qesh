@@ -39,6 +39,34 @@ qh workspace Research # Open a named CLI workspace
 
 `gh` remains GitHub CLI. Qesh uses `qh`. For a source checkout, run `./bin/qh`; update the checkout with Git rather than the managed installer. Node.js 22.13+ and Bun 1.3.5+ are required for source development. Packaged downloads supply their runtimes.
 
+### Qentrah projects from your terminal
+
+The bundled `qh` can discover every public Qentrah repository, install published CLIs, clone source, fork projects, and report bugs:
+
+```sh
+qh projects
+qh project Kyna
+qh install Kyna --manager bun --dry-run
+qh install DUI --manager npm
+qh install kyna-music --source --dir ./music
+qh clone qesh ./qesh-source
+qh fork qesh
+qh bugs qesh
+qh bug qesh --title "Resize issue" --body-file ./report.md
+```
+
+Remove `--dry-run` to execute an inspected action. Source checkouts require Git; forks and issues require GitHub CLI and `gh auth login`. Bug reports contain only text you provide. Repositories without published CLIs are checked out from source; their build instructions are printed. `qh projects --live` fetches the current public catalog.
+
+For a lightweight CLI without the desktop app, install the standalone package with npm or Bun:
+
+```sh
+npm install --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+# Or:
+bun add --global https://github.com/qentrah/qesh/releases/latest/download/qentrah-qh.tgz
+```
+
+An existing Qesh installation already supplies `qh`; use that command rather than overwriting its launcher. See [standalone CLI documentation](packages/qh/README.md).
+
 ### Custom commands and CLI updates
 
 Add command objects to your global configuration. No CLI updates are enabled by default. Inside a Qesh shell, typing `qh` shows help rather than opening a nested workspace. Zsh Tab completion lists built-in and configured command names.

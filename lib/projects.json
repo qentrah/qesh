@@ -1,0 +1,150 @@
+[
+  {
+    "name": ".github",
+    "description": "Qentrah organization profile and brand assets",
+    "url": "https://github.com/qentrah/.github"
+  },
+  {
+    "name": "ai-vision-engine",
+    "description": "Local YOLO26 perception engine: 100 licensed images, fine-tuning, tracking, OCR, pose, depth, segmentation and a results film",
+    "url": "https://github.com/qentrah/ai-vision-engine"
+  },
+  {
+    "name": "Custom-clerk-auth-system",
+    "description": "A secure authentication system built using Clerk.",
+    "url": "https://github.com/qentrah/Custom-clerk-auth-system"
+  },
+  {
+    "name": "desktop-new-tab",
+    "description": "A macOS-style Chrome new tab for folders, links, and desktop widgets.",
+    "url": "https://github.com/qentrah/desktop-new-tab"
+  },
+  {
+    "name": "DUI",
+    "description": "Open-source React components and shadcn registry with TypeScript, Tailwind CSS, and RTL support",
+    "url": "https://github.com/qentrah/DUI",
+    "package": "@qentrah/dui@latest"
+  },
+  {
+    "name": "ETJAH_APP",
+    "description": "",
+    "url": "https://github.com/qentrah/ETJAH_APP"
+  },
+  {
+    "name": "K-store-V_1.2",
+    "description": "",
+    "url": "https://github.com/qentrah/K-store-V_1.2"
+  },
+  {
+    "name": "knowledge-workspace",
+    "description": "Next.js knowledge workspace with Neon auth, Drizzle, source capture, and OpenRouter agents",
+    "url": "https://github.com/qentrah/knowledge-workspace"
+  },
+  {
+    "name": "Kyna",
+    "description": "Kyna programming language",
+    "url": "https://github.com/qentrah/Kyna",
+    "package": "@kyna-language/cli@preview",
+    "trust": true
+  },
+  {
+    "name": "kyna-music",
+    "description": "Native desktop music player built with Kyna, Qt Quick and typed C++ bindings",
+    "url": "https://github.com/qentrah/kyna-music"
+  },
+  {
+    "name": "MySocials",
+    "description": "",
+    "url": "https://github.com/qentrah/MySocials"
+  },
+  {
+    "name": "nexfiy-com",
+    "description": "\\",
+    "url": "https://github.com/qentrah/nexfiy-com"
+  },
+  {
+    "name": "qchat",
+    "description": "Generative UI compiler and React chat runtime for agent frameworks and versioned UI schemas",
+    "url": "https://github.com/qentrah/qchat"
+  },
+  {
+    "name": "qentrah-languages",
+    "description": "Qentrah local-first multilingual WordPress plugin with native editing and versioned release builds",
+    "url": "https://github.com/qentrah/qentrah-languages"
+  },
+  {
+    "name": "qesh",
+    "description": "Qentrah Shell \u2014 a clean macOS terminal workspace with real shells, tabs, groups, and resizable split panes.",
+    "url": "https://github.com/qentrah/qesh"
+  },
+  {
+    "name": "react-messenger",
+    "description": "Chat UX components built with React, inspired by Facebook Messenger",
+    "url": "https://github.com/qentrah/react-messenger"
+  },
+  {
+    "name": "sater",
+    "description": "An Arabic-first developer environment built on Code - OSS",
+    "url": "https://github.com/qentrah/sater"
+  },
+  {
+    "name": "skill-architecture-guardian",
+    "description": "Qentrah architecture guidance for scalable, organization-rooted systems.",
+    "url": "https://github.com/qentrah/skill-architecture-guardian"
+  },
+  {
+    "name": "skill-code-review",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-code-review"
+  },
+  {
+    "name": "skill-content-design",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-content-design"
+  },
+  {
+    "name": "skill-design-critique",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-design-critique"
+  },
+  {
+    "name": "skill-release-readiness",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-release-readiness"
+  },
+  {
+    "name": "skill-repository-guide",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-repository-guide"
+  },
+  {
+    "name": "skill-ui-implementation",
+    "description": "A Qentrah agent skill.",
+    "url": "https://github.com/qentrah/skill-ui-implementation"
+  },
+  {
+    "name": "skills",
+    "description": "Canonical registry and installer for Qentrah agent skills.",
+    "url": "https://github.com/qentrah/skills"
+  },
+  {
+    "name": "start-expo-kit",
+    "description": "",
+    "url": "https://github.com/qentrah/start-expo-kit"
+  },
+  {
+    "name": "start-kit",
+    "description": "",
+    "url": "https://github.com/qentrah/start-kit"
+  },
+  {
+    "name": "use-device",
+    "description": "Reactive Expo hook for window, platform, locale, direction, and color scheme",
+    "url": "https://github.com/qentrah/use-device"
+  },
+  {
+    "name": "WhatsApp-Meta-Business-API-Handler",
+    "description": "A lightweight, easy-to-use TypeScript wrapper for WhatsApp Cloud API. Send messages, media, buttons, and more with full type safety.",
+    "url": "https://github.com/qentrah/WhatsApp-Meta-Business-API-Handler"
+  }
+]

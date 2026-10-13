@@ -1,0 +1,33 @@
+{
+  "name": "@qentrah/qh",
+  "version": "0.6.3",
+  "description": "Discover, install, clone, fork, and report bugs in Qentrah projects from your terminal",
+  "type": "module",
+  "bin": {
+    "qh": "dist/qh.mjs"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qentrah/qesh.git",
+    "directory": "packages/qh"
+  },
+  "homepage": "https://github.com/qentrah/qesh/tree/main/packages/qh",
+  "bugs": {
+    "url": "https://github.com/qentrah/qesh/issues"
+  },
+  "scripts": {
+    "prepack": "node ../../scripts/build-qh-package.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

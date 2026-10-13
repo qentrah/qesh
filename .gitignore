@@ -17,3 +17,6 @@ dist/
 *.sqlite-shm
 
 desktop/settings.bundle.js
+packages/qh/dist/
+packages/qh/LICENSE
+*.tgz
