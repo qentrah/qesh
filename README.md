@@ -10,7 +10,7 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 ## Install and quick commands
 
-Qesh 0.4.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+Qesh 0.4.1 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
 curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
@@ -22,6 +22,8 @@ sh /tmp/qesh-install.sh
 The installer downloads the native Apple Silicon or Intel release from GitHub, verifies SHA-256 and the app signature, and installs into a versioned local folder. It creates `qh` and `qesh` launchers in `~/.local/bin`; add that folder to your shell PATH if necessary. It refuses to replace unrelated commands. `QESH_BIN_DIR` and `QESH_INSTALL_DIR` choose other destinations. The app is locally signed and not notarized.
 
 ```sh
+qh help               # List commands
+qh search update      # Search built-in and custom commands
 qh config             # Open the global configuration
 qh config path        # Print its path
 qh config validate    # Validate JSON and settings
@@ -37,7 +39,7 @@ qh workspace Research # Open a named CLI workspace
 
 ### Custom commands and CLI updates
 
-Add command objects to your global configuration. No CLI updates are enabled by default.
+Add command objects to your global configuration. No CLI updates are enabled by default. Inside a Qesh shell, typing `qh` shows help rather than opening a nested workspace. Zsh Tab completion lists built-in and configured command names.
 
 ```json
 {
@@ -64,7 +66,7 @@ Workspace layouts are stored in `~/Library/Application Support/Qentrah/Qesh/work
 
 On reopen, Qesh creates fresh shell processes in those folders. It does not revive exited programs, reuse their PIDs, replay commands, or restore terminal output. Set `restore` to `false` for a fresh layout. Independent windows have separate saved records. Closing a workspace removes it from that record.
 
-The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it. The plus button sits at the bottom. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
+The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it directly in the sidebar; Enter saves and Escape cancels. The plus button sits at the bottom. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
 
 ### Running-tool identities
 

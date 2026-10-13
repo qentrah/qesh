@@ -16,7 +16,7 @@ function validate(value) {
   for(const key of ['commands','updates']) {
     if(!config[key]||typeof config[key]!=='object'||Array.isArray(config[key]))throw new Error(`${key} must be an object.`);
     for(const [name,item] of Object.entries(config[key])) {
-      if(!/^[a-z][a-z0-9-]{0,39}$/.test(name)||['config','update','update-all','workspace','help','start','version','new-tab','new-window','new-workspace','check-updates','split-right','split-down','group','folder','about'].includes(name))throw new Error(`Invalid or reserved command name: ${name}`);
+      if(!/^[a-z][a-z0-9-]{0,39}$/.test(name)||['search','completions','config','update','update-all','workspace','help','start','version','new-tab','new-window','new-workspace','check-updates','split-right','split-down','group','folder','about'].includes(name))throw new Error(`Invalid or reserved command name: ${name}`);
       if(!item||typeof item!=='object'||typeof item.command!=='string'||!item.command.trim()||item.command.length>8192)throw new Error(`Command ${name} needs a command string.`);
       if(item.cwd!==undefined&&(typeof item.cwd!=='string'||(!isAbsolute(item.cwd)&&item.cwd!=='~'&&!item.cwd.startsWith('~/'))))throw new Error(`Invalid command folder: ${name}`);
       if(item.description!==undefined&&typeof item.description!=='string')throw new Error(`Invalid description: ${name}`);
