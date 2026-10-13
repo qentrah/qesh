@@ -10,9 +10,10 @@ export function attachDesktopControl(workspace: Workspace) {
   socket.on('connect', publish); socket.on('error', () => {});
   workspace.on('change',publish);
   const notice=(text:string)=>{if(!socket.destroyed)socket.write(JSON.stringify({type:'notice',message:text})+'\n');};workspace.on('notice',notice);
+  const publishLayout=(layout:unknown)=>{if(!socket.destroyed)socket.write(JSON.stringify({type:'layout',layout})+'\n');};workspace.on('desktop-layout',publishLayout);
   const pending:unknown[]=[];
   const ready=(event:string)=>{if(event==='desktop-command')queueMicrotask(()=>{for(const command of pending.splice(0))workspace.emit('desktop-command',command);});};
   workspace.on('newListener',ready);
   createInterface({input:socket}).on('line',line => { try { const command=JSON.parse(line);if(workspace.listenerCount('desktop-command'))workspace.emit('desktop-command',command);else if(pending.length<100)pending.push(command); } catch {} });
-  return () => { workspace.off('change',publish);workspace.off('notice',notice);workspace.off('newListener',ready); socket.destroy(); };
+  return () => { workspace.off('change',publish);workspace.off('notice',notice);workspace.off('desktop-layout',publishLayout);workspace.off('newListener',ready); socket.destroy(); };
 }

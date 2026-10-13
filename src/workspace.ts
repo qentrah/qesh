@@ -60,21 +60,21 @@ export class Workspace extends EventEmitter {
     this.tabs = this.tabs.filter(tab => tab.id !== id); this.tabs.splice(this.tabs.findIndex(tab => tab.id === before), 0, tab);
     this.active = this.tabs.findIndex(tab => tab.id === active); this.emit('change');
   }
-  dockTab(id: string, edge: string) {
-    const source = this.tabs.find(tab => tab.id === id), target = this.tab;
+  dockTab(id: string, edge: string, targetId?:string) {
+    const source = this.tabs.find(tab => tab.id === id), target = targetId?this.tabs.find(tab=>leaves(tab.tree).includes(targetId)):this.tab;
     if (!source || !target || source === target || !['left','right','top','bottom'].includes(edge)) return;
-    const insert = (tree: Tree): Tree => tree.kind === 'pane' ? tree.id === target.focused ? { kind: 'split', id: this.id(), axis: ['left','right'].includes(edge) ? 'horizontal' : 'vertical', ratio: .5, first: ['left','top'].includes(edge) ? source.tree : tree, second: ['left','top'].includes(edge) ? tree : source.tree } : tree : { ...tree, first:insert(tree.first), second:insert(tree.second) };
+    const insert = (tree: Tree): Tree => tree.kind === 'pane' ? tree.id === (targetId||target.focused) ? { kind: 'split', id: this.id(), axis: ['left','right'].includes(edge) ? 'horizontal' : 'vertical', ratio: .5, first: ['left','top'].includes(edge) ? source.tree : tree, second: ['left','top'].includes(edge) ? tree : source.tree } : tree : { ...tree, first:insert(tree.first), second:insert(tree.second) };
     target.tree = insert(target.tree); target.focused = source.focused;
     this.tabs = this.tabs.filter(tab => tab !== source); this.active = this.tabs.indexOf(target); this.emit('change');
   }
-  dockPane(id: string, edge: string) {
-    const source = this.tabs.find(tab => leaves(tab.tree).includes(id)), target = this.tab;
-    if (!source || !target || target.focused === id || !['left','right','top','bottom'].includes(edge)) return;
+  dockPane(id: string, edge: string, targetId?:string) {
+    const source = this.tabs.find(tab => leaves(tab.tree).includes(id)), target = targetId?this.tabs.find(tab=>leaves(tab.tree).includes(targetId)):this.tab;
+    if (!source || !target || (targetId||target.focused) === id || !['left','right','top','bottom'].includes(edge)) return;
     const remaining = remove(source.tree,id);
     if (remaining) { source.tree=remaining; if(source.focused===id)source.focused=leaves(remaining)[0]!; }
     else this.tabs=this.tabs.filter(tab=>tab!==source);
     const pane: Tree = {kind:'pane',id};
-    const insert = (tree: Tree): Tree => tree.kind === 'pane' ? tree.id === target.focused ? {kind:'split',id:this.id(),axis:['left','right'].includes(edge)?'horizontal':'vertical',ratio:.5,first:['left','top'].includes(edge)?pane:tree,second:['left','top'].includes(edge)?tree:pane} : tree : {...tree,first:insert(tree.first),second:insert(tree.second)};
+    const insert = (tree: Tree): Tree => tree.kind === 'pane' ? tree.id === (targetId||target.focused) ? {kind:'split',id:this.id(),axis:['left','right'].includes(edge)?'horizontal':'vertical',ratio:.5,first:['left','top'].includes(edge)?pane:tree,second:['left','top'].includes(edge)?tree:pane} : tree : {...tree,first:insert(tree.first),second:insert(tree.second)};
     target.tree=insert(target.tree);target.focused=id;this.active=this.tabs.indexOf(target);this.emit('change');
   }
   detachPane(id: string) {

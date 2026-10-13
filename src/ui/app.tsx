@@ -36,6 +36,8 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
   const tab = workspace.tabs[workspace.active];
   const bounds = { x: 0, y: 0, width: Math.max(2, width), height: Math.max(2, height - topChrome - footerRows) };
   const layout = tab ? geometry(tab.tree, bounds, tab.focused) : null;
+  const layoutRef=useRef(layout);layoutRef.current=layout;
+  useEffect(()=>{if(desktop)workspace.emit('desktop-layout',layout?{cols:width,rows:height,panes:[...layout.panes].map(([id,rect])=>({id,...rect})),dividers:layout.dividers,collapsed:layout.collapsed}:null);},[width,height,tab?.tree,tab?.focused,workspace.revision,footerRows]);
   const paneHeader = (id: string) => !desktop || (layout?.panes.size || 0) > 1 || workspace.sessions.sessions.get(id)?.status !== 'running' ? 1 : 0;
   useEffect(() => {
     if (!layout) return;
@@ -47,7 +49,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else action();
   }
   useEffect(() => {
-    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
+    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; target?:string; x?:number; y?:number; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
       if(message.action==='configure'&&message.config){workspace.sessions.setScrollback(message.config.scrollback);workspace.maxWorkspaces=message.config.storage.maxWorkspaces;applyTheme(message.config.theme);workspace.emit('change');return;}
       if (modalRef.current) return;
       if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
@@ -63,6 +65,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       else if (message.action === 'rename-tab' && message.id && message.name) { if(!workspace.selectTab(message.id))return; workspace.rename(message.name); }
       else if (message.action === 'close-tab' && message.id) { if(!workspace.selectTab(message.id))return; (message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close tab?', leaves(workspace.tab.tree), closeTab); }
       else if(message.action==='close-pane'&&message.id){if(!workspace.activatePane(message.id))return;(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close this shell?',[message.id],closePane);}
+      else if(message.action==='resize-split'&&message.id&&Number.isFinite(message.x)&&Number.isFinite(message.y)){const divider=layoutRef.current?.dividers.find(item=>item.id===message.id);if(divider)resizeDivider(divider,message.x!,message.y!);}
       else if(message.action==='equalize')workspace.equalize();
       else if(message.action==='restart-pane'&&message.id)workspace.sessions.restart(message.id);
       else if (message.action === 'split-right') {if(message.id&&!workspace.activatePane(message.id))return;workspace.split('horizontal');}
@@ -72,9 +75,9 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       else if (message.action === 'new-group' && message.name) workspace.addGroup(message.name);
       else if (message.action === 'group-tab' && message.id) workspace.groupTab(message.id,message.group);
       else if (message.action === 'reorder-tab' && message.id && message.before) workspace.reorderTab(message.id,message.before);
-      else if (message.action === 'dock-tab' && message.id && message.edge) workspace.dockTab(message.id,message.edge);
+      else if (message.action === 'dock-tab' && message.id && message.edge) workspace.dockTab(message.id,message.edge,message.target);
       else if (message.action === 'focus-pane' && message.id) workspace.activatePane(message.id);
-      else if (message.action === 'dock-pane' && message.id && message.edge) workspace.dockPane(message.id,message.edge);
+      else if (message.action === 'dock-pane' && message.id && message.edge) workspace.dockPane(message.id,message.edge,message.target);
       else if (message.action === 'detach-pane' && message.id) workspace.detachPane(message.id);
     };
     workspace.on('desktop-command',command); return () => { workspace.off('desktop-command',command); };
@@ -82,14 +85,14 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
   function closePane() { workspace.closePane(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
   function closeTab() { workspace.closeTab(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
   function resizeDivider(divider: Divider, x: number, y: number) {
-    if (!tab || modalRef.current) return;
+    const currentTab=workspace.tab;if (!currentTab || modalRef.current) return;
     const { parent, axis } = divider;
     const firstMin = minimumNode(divider.id, true), secondMin = minimumNode(divider.id, false);
     const size = (axis === 'horizontal' ? parent.width : parent.height) - 1;
     const distance = axis === 'horizontal' ? x - parent.x : y - parent.y;
     const low = axis === 'horizontal' ? firstMin.width : firstMin.height;
     const high = size - (axis === 'horizontal' ? secondMin.width : secondMin.height);
-    tab.tree = setRatio(tab.tree, divider.id, Math.max(low, Math.min(high, distance)) / size);
+    currentTab.tree = setRatio(currentTab.tree, divider.id, Math.max(low, Math.min(high, distance)) / size);
     workspace.emit('change');
   }
   function minimumNode(id: string, first: boolean) {
@@ -186,7 +189,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
             <terminal-surface manager={workspace.sessions} sessionId={id} active={active} obscured={!!modal} width={rect.width} height={Math.max(1, rect.height - paneHeader(id))} onActivate={() => workspace.focus(id)} onSelected={text => selections.current.set(id, text)} />
           </box>;
         })}
-        {layout.dividers.map(divider => <box key={divider.id} id={`divider-${divider.id}`} position="absolute" left={divider.x} top={divider.y} width={divider.width} height={divider.height} backgroundColor={colors.background}
+        {(!desktop?layout.dividers:[]).map(divider => <box key={divider.id} id={`divider-${divider.id}`} position="absolute" left={divider.x} top={divider.y} width={divider.width} height={divider.height} backgroundColor={colors.background}
           onMouseOver={()=>setHoverDivider(divider.id)} onMouseOut={()=>setHoverDivider('')}
           onMouseDrag={event => resizeDivider(divider, event.x, event.y - topChrome)}
           onMouseDown={event => { draggingDivider.current = divider; resizeDivider(divider, event.x, event.y - topChrome); }}>
