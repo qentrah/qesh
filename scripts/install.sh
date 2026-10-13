@@ -5,7 +5,7 @@ arch=$(uname -m)
 case "$arch" in arm64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo 'Unsupported Mac processor.' >&2; exit 1 ;; esac
 version=${1:-}
 if [ -z "$version" ]; then
- version=$(curl -fsSL https://api.github.com/repos/qentrah/qesh/releases | /usr/bin/plutil -extract 0.tag_name raw -o - -)
+ version=$(curl -fsSL https://qentrah.com/qesh/latest.json | /usr/bin/plutil -extract version raw -o - -)
 fi
 if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([-.][A-Za-z0-9.-]+)?$'; then echo 'Invalid release version.' >&2; exit 1; fi
 install_dir=${QESH_INSTALL_DIR:-"$HOME/Library/Application Support/Qentrah/Qesh/versions"}

@@ -18,3 +18,5 @@ export const qentrahTheme = createTheme({ name: 'Qentrah', colors: {
   border: colors.border, mutedForeground: colors.muted, error: colors.error,
   accent: colors.primary, focusRing: colors.primary, selection: colors.selection,
 } as ReturnType<typeof createTheme>['colors'] });
+
+export function applyTheme(theme:typeof colors){Object.assign(colors,theme);Object.assign(qentrahTheme.colors,{background:colors.background,foreground:colors.foreground,primary:colors.primary,border:colors.border,mutedForeground:colors.muted,error:colors.error,accent:colors.primary,focusRing:colors.primary,selection:colors.selection});}

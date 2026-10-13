@@ -7,7 +7,7 @@ import type { Terminal } from '@xterm/headless';
 import type { Request, Response } from './protocol';
 
 export interface Session {
-  id: string; terminal: Terminal; cwd: string; shell: string;
+  id: string; generation: number; terminal: Terminal; cwd: string; shell: string;
   status: 'starting' | 'running' | 'exited' | 'error';
   cursorVisible: boolean; title?: string; label?: string; process?: string; pid?: number; exitCode?: number; error?: string; scroll: number;
 }
@@ -16,6 +16,7 @@ export class SessionManager extends EventEmitter {
   private host: ChildProcessWithoutNullStreams;
   private closing = false;
   private lastError = '';
+  private generation = 0;
   constructor() {
     super();
     this.host = spawn(process.env.QENTRAH_NODE ?? 'node', [fileURLToPath(new URL('./pty-host.mjs', import.meta.url))], { stdio: 'pipe' });
@@ -39,27 +40,30 @@ export class SessionManager extends EventEmitter {
     this.emit('change');
   }
   private send(message: Request) {
+    if('id' in message&&message.type!=='spawn'&&message.generation===undefined)message={...message,generation:this.sessions.get(message.id)?.generation};
     if (!this.closing && !this.host.stdin.destroyed) this.host.stdin.write(JSON.stringify(message) + '\n');
   }
+  scrollback=Math.max(100,Math.min(50000,Number(process.env.QESH_SCROLLBACK)||5000));
+  setScrollback(value:number){this.scrollback=value;for(const session of this.sessions.values())session.terminal.options.scrollback=value;}
   create(id: string, cwd: string, shell: string, cols = 80, rows = 24) {
-    const terminal = new Xterm.Terminal({ cols, rows, scrollback: 5000, allowProposedApi: true });
-    const session: Session = { id, terminal, cwd, shell, status: 'starting', scroll: 0, cursorVisible: true };
+    const terminal = new Xterm.Terminal({ cols, rows, scrollback: this.scrollback, allowProposedApi: true });
+    const session: Session = { id, generation:++this.generation, terminal, cwd, shell, status: 'starting', scroll: 0, cursorVisible: true };
     this.sessions.set(id, session);
     for (const final of ['h', 'l']) terminal.parser.registerCsiHandler({ prefix: '?', final }, params => {
       if (params.includes(25)) session.cursorVisible = final === 'h';
       return false;
     });
-    terminal.onData(data => this.input(id, data)); // Device-status responses from the emulator.
+    terminal.onData(data => {if(this.sessions.get(id)===session)this.input(id, data);}); // Device-status responses from the emulator.
     terminal.onTitleChange(title => {session.title=title.slice(0,120);this.emit('change');});
-    this.send({ type: 'spawn', id, cwd, shell, args: ['-l'], cols, rows });
+    this.send({ type: 'spawn', id, generation:session.generation, cwd, shell, args: ['-l'], cols, rows });
     return session;
   }
   private receive(message: Response) {
     const session = this.sessions.get(message.id);
-    if (!session) return;
+    if (!session || (message.generation!==undefined && message.generation!==session.generation)) return;
     if (message.type === 'output') {
       // Headless xterm processes escape sequences rather than stripping them.
-      session.terminal.write(message.data, () => { this.send({ type: 'ack', id: session.id, size: message.data.length }); this.emit('output', session.id); });
+      session.terminal.write(message.data, () => { this.send({ type: 'ack', id: session.id, generation:session.generation, size: message.data.length }); this.emit('output', session.id); });
       return;
     }
     if (message.type === 'info') {session.cwd=message.cwd||session.cwd;session.process=message.process;this.emit('change');}
@@ -83,7 +87,8 @@ export class SessionManager extends EventEmitter {
   }
   resize(id: string, cols: number, rows: number) {
     const session = this.sessions.get(id);
-    cols = Math.max(2, Math.floor(cols)); rows = Math.max(1, Math.floor(rows));
+    if(!Number.isFinite(cols)||!Number.isFinite(rows))return;
+    cols = Math.max(2,Math.min(1000, Math.floor(cols))); rows = Math.max(1,Math.min(500, Math.floor(rows)));
     if (!session || (session.terminal.cols === cols && session.terminal.rows === rows)) return;
     session.terminal.resize(cols, rows);
     if (session.status === 'running' || session.status === 'starting') this.send({ type: 'resize', id, cols, rows });

@@ -7,12 +7,13 @@ import { basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const zshConfig = fileURLToPath(new URL('./shell/zsh', import.meta.url));
 const sessions = new Map();
+const generations = new WeakMap();
 const live = new Set();
 const pending = new Map();
 const send = message => process.stdout.write(JSON.stringify(message) + '\n');
 let shuttingDown = false;
 const info=new Map();
-const poll=setInterval(()=>{for(const [id,session] of sessions){if(info.get(id)?.busy)continue;const previous=info.get(id)||{};info.set(id,{...previous,busy:true});execFile('/usr/sbin/lsof',['-a','-p',String(session.pid),'-d','cwd','-Fn'],{timeout:1500},(_error,stdout)=>{const cwd=stdout?.split('\n').find(line=>line.startsWith('n'))?.slice(1);let processName;try{processName=session.process;}catch{}const next={cwd:cwd||previous.cwd,process:processName||previous.process,busy:false};info.set(id,next);if(next.cwd!==previous.cwd||next.process!==previous.process)send({type:'info',id,cwd:next.cwd,process:next.process});});}},1500);poll.unref();
+const poll=setInterval(()=>{for(const [id,session] of sessions){if(info.get(id)?.busy)continue;const previous=info.get(id)||{};info.set(id,{...previous,busy:true});execFile('/usr/sbin/lsof',['-a','-p',String(session.pid),'-d','cwd','-Fn'],{timeout:1500},(_error,stdout)=>{if(sessions.get(id)!==session)return;const cwd=stdout?.split('\n').find(line=>line.startsWith('n'))?.slice(1);let processName;try{processName=session.process;}catch{}const next={cwd:cwd||previous.cwd,process:processName||previous.process,busy:false};info.set(id,next);if(next.cwd!==previous.cwd||next.process!==previous.process)send({type:'info',id,generation:generations.get(session),cwd:next.cwd,process:next.process});});}},1500);poll.unref();
 function close(id) {
   const session = sessions.get(id);
   if (!session) return;
@@ -55,25 +56,28 @@ createInterface({ input: process.stdin }).on('line', line => {
         cwd: message.cwd, cols: message.cols, rows: message.rows,
         name: 'xterm-256color', env: { ...process.env, ...(basename(message.shell) === 'zsh' ? { ZDOTDIR: zshConfig, QENTRAH_USER_ZDOTDIR: process.env.ZDOTDIR || process.env.HOME } : {}), TERM: 'xterm-256color', COLORTERM: 'truecolor', QENTRAH_TERMINAL: '1' },
       });
-      sessions.set(id, session);
+      sessions.set(id, session);generations.set(session,message.generation);
       live.add(session);
-      send({ type: 'spawned', id, pid: session.pid });
+      send({ type: 'spawned', id, generation:message.generation,pid: session.pid });
       pending.set(session, 0);
       session.onData(data => {
+        if(sessions.get(id)!==session)return;
         pending.set(session, (pending.get(session) ?? 0) + data.length);
-        send({ type: 'output', id, data });
+        send({ type: 'output', id, generation:generations.get(session),data });
         if (pending.get(session) > 262144) session.pause();
       });
       session.onExit(({ exitCode, signal }) => {
         live.delete(session);
         pending.delete(session);
-        if (sessions.get(id) === session) sessions.delete(id);
-        send({ type: 'exit', id, code: exitCode, signal });
+        if (sessions.get(id) !== session) return;
+        sessions.delete(id);
+        send({ type: 'exit', id, generation:generations.get(session),code: exitCode, signal });
       });
-    } else if (message.type === 'close') close(id);
+    } else if (message.type === 'close') {const current=sessions.get(id);if(current&&(message.generation===undefined||message.generation===generations.get(current)))close(id);}
     else {
       const session = sessions.get(id);
       if (!session) { if (message.type === 'ack') return; throw new Error('Session is not running'); }
+      if(message.generation!==undefined&&message.generation!==generations.get(session))return;
       if (message.type === 'ack') {
         const remaining = Math.max(0, (pending.get(session) ?? 0) - message.size);
         pending.set(session, remaining);
@@ -81,7 +85,7 @@ createInterface({ input: process.stdin }).on('line', line => {
       } else if (message.type === 'input') session.write(message.data);
       else if (message.type === 'resize') session.resize(message.cols, message.rows);
     }
-  } catch (error) { send({ type: 'error', id: message?.id ?? '', message: error.message }); }
+  } catch (error) { send({ type: 'error', id: message?.id ?? '', generation:message?.generation,message: error.message }); }
 }).on('close', shutdown);
 process.on('SIGTERM', shutdown);
 process.on('SIGHUP', shutdown);

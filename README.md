@@ -10,7 +10,7 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 ## Install and quick commands
 
-Qesh 0.4.1 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+Qesh 0.5.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
 curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
@@ -89,7 +89,7 @@ Layouts restore from the local SQLite store unless `restore` is disabled. Reopen
 
 ## Download the desktop app
 
-Get **Qesh-macOS-arm64.zip** from [Releases](https://github.com/qentrah/qesh/releases), extract it, and open **Qesh.app**. You can move the app to Applications or add it to the Dock. Keep `qesh.config.json` beside the app if you want to keep the supplied settings; the app creates defaults when it is missing.
+Get **Qesh-macOS-arm64.zip** from [Releases](https://github.com/qentrah/qesh/releases), extract it, and open **Qesh.app**. You can move the app to Applications or add it to the Dock. Settings are stored in your local Application Support folder; no sidecar file is needed.
 
 The supplied build targets **Apple Silicon macOS** and includes Electron, Bun, Node.js, and native terminal dependencies. No separate runtime install is needed for the downloadable app. These early builds are locally signed and **not notarized**. The repository contains the source and reproducible build instructions.
 
@@ -119,7 +119,7 @@ cd /path/to/your/project
 qesh
 ```
 
-`qesh --help` prints usage. The older `q-terminal` and `qentrah-terminal` command aliases remain available. `$SHELL` selects the CLI shell, falling back to `/bin/zsh`; desktop settings select the desktop shell.
+`qesh --help` prints usage. The older `q-terminal` and `qentrah-terminal` command aliases remain available. The legacy Bun aliases use `$SHELL`, falling back to `/bin/zsh`; global configuration selects the desktop and `qh` shell.
 
 ### Native setup
 
@@ -143,7 +143,7 @@ The three-dot menu exposes **New Tab**, **New Window**, **Configure…**, **Spli
 | --- | --- |
 | Cmd+T | New tab |
 | Cmd+N | New independent window |
-| Cmd+, | Configure JSON |
+| Cmd+, | Settings |
 | Cmd+Shift+P | Search commands |
 | Cmd+Q | Quit all windows, with confirmation |
 
@@ -180,7 +180,7 @@ Pane minimums are 20 columns and 5 rows. When a window is too small for the spli
 
 ## Configuration
 
-**Configure…** opens the global JSON editor with validation, Save, and Open in Editor. On macOS the active file is `~/Library/Application Support/Qentrah/Qesh/config.json`. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
+**Settings…** opens sidebar pages for Appearance, Terminal, Storage, Keyboard, Commands, and Updates. Changes save automatically and show **Saved** after validation and an atomic write. **Open Configuration JSON** opens `~/Library/Application Support/Qentrah/Qesh/config.jsonc` in VS Code, Cursor, Windsurf, or the associated editor. JSONC accepts comments and trailing commas; documentation links are included at the top. Editor changes are reloaded automatically in open desktop windows. Invalid edits leave the active settings unchanged. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
 
 ```json
 {
@@ -204,7 +204,7 @@ Pane minimums are 20 columns and 5 rows. When a window is too small for the spli
 
 `defaultPath` accepts an absolute folder path or `~`/`~/…`. `shell` must be an absolute executable path. Font size is 10–28; tabs can be `left` or `top`; theme colors use `#RRGGBB`. Invalid edits leave the previous configuration intact. A missing starting folder falls back to the home folder.
 
-Saving updates font and tab placement in existing windows. Open a **new window** to apply the full terminal theme, starting folder, or shell. Editing settings does not restart existing shells.
+Saving updates font and tab placement in existing windows. Theme changes apply immediately. Open a **new window** to apply the starting folder or shell. Editing settings does not restart existing shells.
 
 ### Shell appearance
 
@@ -262,3 +262,16 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for contributions and [AGENTS.md](AGENTS.
 ## License and credits
 
 Qesh's original source is [MIT](LICENSE), copyright Qentrah. Third-party code retains its own licenses; see [NOTICE.md](NOTICE.md), the vendored license files, and notices bundled with the desktop app. Qentrah's logo remains a brand mark; the software license does not grant trademark rights.
+
+
+### Desktop settings and shortcuts
+
+Use the gear in the sidebar or Cmd+, to open Settings. Terminal, Commands, and Settings share the sidebar; switching views preserves shell processes. Rename workspaces, tabs, pane labels, and groups inline with a double-click. Tab and workspace Color menus offer Cyan, Blue, Green, Amber, Violet, and Rose, Default, plus the macOS color chooser.
+
+GUI `shortcuts` map action names to Electron accelerators, such as `"new-tab": "Cmd+T"`. Record them on the Keyboard page; Backspace disables a binding, Escape cancels, and duplicate or reserved editing/shell keys are rejected. This does not change the terminal Ctrl+B prefix. The config file links to [configuration](https://qentrah.com/docs/qesh/configuration) and [keyboard customization](https://qentrah.com/docs/qesh/keyboard).
+
+`storage.enabled` enables local SQLite layout saves; `restore` enables restore on launch. `storage.saveDelayMs` batches saves (100–5000 ms), `storage.maxWorkspaces` limits new workspaces (1–100), and `scrollback` bounds per-shell emulator history (100–50000 lines). Existing workspaces survive lowering the creation limit. SQLite stores layout metadata and folders; terminal output, running processes, secrets, and environment variables are not saved. Storage shows the database path and size. Font, colors, tab position, scrollback, and creation limits apply immediately; shell and starting folder apply to new windows.
+
+Appearance includes Charcoal, Graphite, and Midnight themes. Save the current palette with a name to add a custom theme. Settings and Commands close with their × button or Escape. Context menus and theme selectors close when you click outside. Each workspace has a + action for a new tab in that workspace. Recent app errors are bounded to 30 entries in memory, visible in Storage, and never uploaded.
+
+The sidebar displays every workspace, its tabs, and connected session rows. Select a session to focus its workspace, tab, and pane. Drag tabs and panes within the active workspace; select another workspace before docking its items. The lower toolbar groups Terminal, New, Commands, and Settings. Workspace and tray menus include New tab and quick ready-to-use themes. Window size, sidebar width, last Settings page, and last app view are stored in local SQLite when saving is enabled. `qh diagnostics` validates configuration and prints storage location plus the last saved app startup, main-process memory, and session count. Performance samples stay local. Bundled `qh` is on the PATH of all app shells, including restored shells.

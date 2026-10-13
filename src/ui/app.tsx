@@ -10,7 +10,7 @@ import { Tabs } from '../termcn/ui/tabs';
 import { Dialog } from '../termcn/ui/dialog';
 import { Help } from '../termcn/ui/help';
 import { ThemeProvider } from '../termcn/providers/theme-provider';
-import { colors, qentrahTheme } from './theme';
+import { colors, qentrahTheme, applyTheme } from './theme';
 import './terminal-surface';
 
 type Modal = { kind: 'confirm'; title: string; action: () => void } | { kind: 'rename' } | { kind: 'help' } | null;
@@ -46,7 +46,8 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else action();
   }
   useEffect(() => {
-    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string }) => {
+    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string; config?: any }) => {
+      if(message.action==='configure'&&message.config){workspace.sessions.setScrollback(message.config.scrollback);workspace.maxWorkspaces=message.config.storage.maxWorkspaces;applyTheme(message.config.theme);workspace.emit('change');return;}
       if (modalRef.current) return;
       if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
       else if(message.action==='new-workspace')workspace.newSpace(message.name);
@@ -63,6 +64,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       else if (message.action === 'split-right') workspace.split('horizontal');
       else if (message.action === 'split-down') workspace.split('vertical');
       else if (message.action === 'help') setModal({kind:'help'});
+      else if(message.action==='rename-group'&&message.group&&message.name)workspace.renameGroup(message.group,message.name);
       else if (message.action === 'new-group' && message.name) workspace.addGroup(message.name);
       else if (message.action === 'group-tab' && message.id) workspace.groupTab(message.id,message.group);
       else if (message.action === 'reorder-tab' && message.id && message.before) workspace.reorderTab(message.id,message.before);

@@ -144,3 +144,7 @@ test('Qentrah zsh customization preserves startup files and has an opt-out', asy
     await manager?.shutdown(); rmSync(folder, { recursive: true, force: true });
   }
 }, 15000);
+
+test('wrong commands stay in the shell and invalid resize requests preserve the live process',async()=>{
+ const manager=new SessionManager();try{const session=manager.create('errors',process.cwd(),'/bin/zsh');await until(()=>session.status==='running');const pid=session.pid;manager.input(session.id,'qh_this_command_does_not_exist_123\r');await until(()=>text(session).includes('command not found'));expect(session.status).toBe('running');expect(session.pid).toBe(pid);const cols=session.terminal.cols,rows=session.terminal.rows;manager.resize(session.id,NaN,20);manager.resize(session.id,80,Infinity);expect(session.terminal.cols).toBe(cols);expect(session.terminal.rows).toBe(rows);manager.resize(session.id,-1,0);expect(session.terminal.cols).toBe(2);expect(session.terminal.rows).toBe(1);manager.resize(session.id,81,22);manager.input(session.id,"printf '\\nRESIZE:'; stty size\r");await until(()=>text(session).includes('RESIZE:22 81'));expect(session.pid).toBe(pid);manager.setScrollback(100);expect(session.terminal.options.scrollback).toBe(100);}finally{await manager.shutdown();}
+});
