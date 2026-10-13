@@ -1,12 +1,34 @@
 name: macOS checks and builds
 on:
   push:
+    branches: [main]
+    tags: ["v*"]
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: qesh-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.plan.outputs.publish }}
+      tag: ${{ steps.plan.outputs.tag }}
+      version: ${{ steps.plan.outputs.version }}
+      preview: ${{ steps.plan.outputs.preview }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release-plan.mjs
   build:
+    needs: prepare
     name: macOS ${{ matrix.arch }}
     strategy:
       fail-fast: false
@@ -30,7 +52,13 @@ jobs:
         env:
           EXPECTED_ARCH: ${{ matrix.arch }}
         run: node -e 'if (process.arch !== process.env.EXPECTED_ARCH) throw new Error(`Unexpected architecture ${process.arch}`)'
-      - run: bun install --frozen-lockfile
+      - name: Apply release version
+        env:
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+        run: node -e 'const fs=require("fs"),p=require("./package.json");p.version=process.env.RELEASE_VERSION;fs.writeFileSync("package.json",JSON.stringify(p,null,2)+"\n")'
+      - name: Install dependencies
+        run: |
+          bun install --frozen-lockfile || { bun pm cache rm; bun install --frozen-lockfile; }
       - name: Install Electron native runtime
         run: node node_modules/electron/install.js
       - run: bun run check
@@ -68,25 +96,39 @@ jobs:
           compression-level: 0
           retention-days: 30
   release:
-    name: Attach macOS builds to preview release
-    if: startsWith(github.ref, 'refs/tags/v') && github.event_name == 'push'
-    needs: build
+    name: Publish tested macOS release
+    if: needs.prepare.outputs.publish == 'true'
+    needs: [prepare, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: Qesh-macOS-*
           path: release
           merge-multiple: true
-      - name: Publish preview assets
+      - name: Publish complete release
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_PREVIEW: ${{ needs.prepare.outputs.preview }}
         run: |
-          if ! gh release view "$RELEASE_TAG"; then
-            gh release create "$RELEASE_TAG" --verify-tag --prerelease --title "Qesh $RELEASE_TAG" --generate-notes
+          for arch in arm64 x64; do
+            test -s "release/Qesh-macOS-$arch.zip"
+            test -s "release/Qesh-macOS-$arch.sha256"
+            (cd release && sha256sum -c "Qesh-macOS-$arch.sha256")
+          done
+          cp scripts/install.sh release/install.sh
+          if gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft > release/draft-state; then
+            if [ "$(cat release/draft-state)" = false ]; then
+              echo "Release already published; preserving its assets."
+              exit 0
+            fi
+          else
+            gh release create "$RELEASE_TAG" --target "$GITHUB_SHA" --draft --title "Qesh $RELEASE_TAG" --generate-notes
           fi
-          gh release upload "$RELEASE_TAG" release/*.zip release/*.sha256 --clobber
+          gh release upload "$RELEASE_TAG" release/*.zip release/*.sha256 release/install.sh --clobber
+          gh release edit "$RELEASE_TAG" --draft=false --prerelease="$RELEASE_PREVIEW"

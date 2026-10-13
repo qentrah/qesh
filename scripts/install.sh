@@ -3,10 +3,28 @@ set -eu
 if [ "$(uname -s)" != Darwin ]; then echo 'Qesh currently requires macOS.' >&2; exit 1; fi
 arch=$(uname -m)
 case "$arch" in arm64) arch=arm64 ;; x86_64) arch=x64 ;; *) echo 'Unsupported Mac processor.' >&2; exit 1 ;; esac
-version=${1:-}
-if [ -z "$version" ]; then
- version=$(curl -fsSL https://qentrah.com/qesh/latest.json | /usr/bin/plutil -extract version raw -o - -)
-fi
+selector=${1:-latest}
+metadata=$(mktemp "${TMPDIR:-/tmp}/qesh-release.XXXXXXXX")
+trap 'rm -f "$metadata"' EXIT INT TERM
+case "$selector" in
+ latest|stable)
+  curl -fsSL --retry 2 https://api.github.com/repos/qentrah/qesh/releases/latest -o "$metadata"
+  version=$(/usr/bin/plutil -extract tag_name raw -o - "$metadata")
+  ;;
+ preview)
+  curl -fsSL --retry 2 'https://api.github.com/repos/qentrah/qesh/releases?per_page=100' -o "$metadata"
+  index=0; version=''
+  while candidate=$(/usr/bin/plutil -extract "$index.tag_name" raw -o - "$metadata" 2>/dev/null); do
+   draft=$(/usr/bin/plutil -extract "$index.draft" raw -o - "$metadata")
+   if [ "$draft" = false ]; then version=$candidate; break; fi
+   index=$((index+1))
+  done
+  ;;
+ v*) version=$selector ;;
+ [0-9]*) version=v$selector ;;
+ *) echo 'Usage: sh install.sh [latest|stable|preview|vVERSION]' >&2; exit 1 ;;
+esac
+rm -f "$metadata"
 if ! printf '%s' "$version" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+([-.][A-Za-z0-9.-]+)?$'; then echo 'Invalid release version.' >&2; exit 1; fi
 install_dir=${QESH_INSTALL_DIR:-"$HOME/Library/Application Support/Qentrah/Qesh/versions"}
 bin_dir=${QESH_BIN_DIR:-"$HOME/.local/bin"}
@@ -15,8 +33,8 @@ temporary=$(mktemp -d "${TMPDIR:-/tmp}/qesh-install.XXXXXXXX")
 trap 'rm -rf "$temporary"' EXIT INT TERM
 asset="Qesh-macOS-$arch.zip"
 base="https://github.com/qentrah/qesh/releases/download/$version"
-curl -fL "$base/$asset" -o "$temporary/$asset"
-curl -fsSL "$base/Qesh-macOS-$arch.sha256" -o "$temporary/checksum"
+curl -fL --retry 2 "$base/$asset" -o "$temporary/$asset"
+curl -fsSL --retry 2 "$base/Qesh-macOS-$arch.sha256" -o "$temporary/checksum"
 (cd "$temporary" && shasum -a 256 -c checksum)
 ditto -x -k "$temporary/$asset" "$temporary/unpack"
 codesign --verify --deep --strict "$temporary/unpack/Qesh.app"

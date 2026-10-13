@@ -102,7 +102,7 @@ ipcMain.handle('app:action',async(event,request)=>{
   }
   if(request.action==='new-window'){newWindow();return {};}
   if(request.action==='folder'){const result=await dialog.showOpenDialog(record.window,{title:'Open or create a folder',buttonLabel:'Open in new tab',properties:['openDirectory','createDirectory']});if(!result.canceled)send(record,{type:'control',command:{action:'new-tab',cwd:result.filePaths[0]}});return {};}
-  if(request.action==='check-updates'){const result=await fetch('https://api.github.com/repos/qentrah/qesh/releases',{headers:{Accept:'application/vnd.github+json','User-Agent':'Qesh'}});if(!result.ok)throw new Error(`Release check failed: HTTP ${result.status}`);const releases=await result.json(),latest=releases.filter(r=>!r.draft&&(record.config.updateChannel==='preview'||!r.prerelease)).sort((a,b)=>a.tag_name.localeCompare(b.tag_name,undefined,{numeric:true})).at(-1);return {version:latest?.tag_name,current:require(join(root,'package.json')).version};}
+  if(request.action==='check-updates'){const {fetchReleases,selectRelease}=await import(require('node:url').pathToFileURL(join(root,'lib/releases.mjs')).href);const latest=selectRelease(await fetchReleases(),record.config.updateChannel);return {version:latest.tag_name,current:require(join(root,'package.json')).version};}
   if(request.action==='about-info')return {version:require(join(root,'package.json')).version};
   if(request.action==='about'){settingsWindow(record,'about');return {};}
  }catch(error){record.errors.push({time:Date.now(),message:error.message});record.errors=record.errors.slice(-30);return {error:error.message};}
