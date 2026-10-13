@@ -1,5 +1,6 @@
 // Native node-pty runs in Node, isolated from Bun's renderer process.
 import pty from 'node-pty';
+import {execFile} from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { accessSync, constants } from 'node:fs';
 import { basename } from 'node:path';
@@ -10,10 +11,12 @@ const live = new Set();
 const pending = new Map();
 const send = message => process.stdout.write(JSON.stringify(message) + '\n');
 let shuttingDown = false;
+const info=new Map();
+const poll=setInterval(()=>{for(const [id,session] of sessions){if(info.get(id)?.busy)continue;const previous=info.get(id)||{};info.set(id,{...previous,busy:true});execFile('/usr/sbin/lsof',['-a','-p',String(session.pid),'-d','cwd','-Fn'],{timeout:1500},(_error,stdout)=>{const cwd=stdout?.split('\n').find(line=>line.startsWith('n'))?.slice(1);let processName;try{processName=session.process;}catch{}const next={cwd:cwd||previous.cwd,process:processName||previous.process,busy:false};info.set(id,next);if(next.cwd!==previous.cwd||next.process!==previous.process)send({type:'info',id,cwd:next.cwd,process:next.process});});}},1500);poll.unref();
 function close(id) {
   const session = sessions.get(id);
   if (!session) return;
-  sessions.delete(id);
+  sessions.delete(id); info.delete(id);
   try { process.kill(-session.pid, 'SIGHUP'); } catch {}
   try { session.kill(); } catch {}
   const timer = setTimeout(() => {
@@ -25,7 +28,7 @@ function close(id) {
 }
 async function shutdown() {
   if (shuttingDown) return;
-  shuttingDown = true;
+  shuttingDown = true;clearInterval(poll);
   for (const id of [...sessions.keys()]) close(id);
   // Stay alive until node-pty's waitpid callbacks reap the children.
   const deadline = Date.now() + 900;

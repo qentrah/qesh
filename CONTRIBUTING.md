@@ -2,7 +2,7 @@
 
 Open an issue to describe a bug or proposed change, then submit a focused pull request against `main`. Include the behavior before and after the change and the checks you ran. For bugs, include macOS version, architecture, Bun/Node versions, selected shell, and reproduction steps; remove private shell output before posting.
 
-Install Bun 1.3.5+ and Node.js 22+ on macOS, clone the repository, and run `bun install`. Use `bun run start` for the CLI or `bun run desktop` for the standalone development window.
+Install Bun 1.3.5+ and Node.js 22.13+ on macOS, clone the repository, and run `bun install`. Use `bun run start` for the CLI or `bun run desktop` for the standalone development window.
 
 Run `bun run check`, `bun test`, and relevant smoke checks before submitting. Desktop UI changes should also build with `bun run build:desktop`. If Rams is available, run `quick_review` with `via=rules` where supported and fix its findings; report unavailable review capabilities honestly.
 

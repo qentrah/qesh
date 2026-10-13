@@ -3,12 +3,15 @@ const { spawn } = require('node:child_process');
 const { createInterface } = require('node:readline');
 const { join, resolve, dirname } = require('node:path');
 const { homedir } = require('node:os');
-const { existsSync, appendFileSync, statSync } = require('node:fs');
+const { existsSync, appendFileSync, statSync, mkdirSync, copyFileSync } = require('node:fs');
 const configuration = require('./config.cjs');
 const bundled = existsSync(join(process.resourcesPath, 'runtime', 'bun'));
 const root = bundled ? join(process.resourcesPath, 'terminal') : resolve(__dirname, '..');
 const runtime = bundled ? join(process.resourcesPath, 'runtime') : null;
-const configPath = join(bundled ? dirname(resolve(process.resourcesPath,'../..')) : root, 'qesh.config.json');
+const {configPath,dataDir}=require(join(root,'lib/paths.cjs'));
+mkdirSync(dataDir,{recursive:true,mode:0o700});
+const legacy=join(bundled?dirname(resolve(process.resourcesPath,'../..')):root,'qesh.config.json');
+if(!existsSync(configPath)&&existsSync(legacy))copyFileSync(legacy,configPath);
 const windows = new Map(); let quitting = false;
 const debug = value => { if (process.env.QENTRAH_DEBUG_LOG) appendFileSync(process.env.QENTRAH_DEBUG_LOG,`${value}\n`); };
 function settings() { try { return configuration.load(configPath); } catch(error) { dialog.showErrorBox('Configuration error',`${error.message}\n\n${configPath}\nDefault settings will be used.`);return configuration.defaults; } }
@@ -37,7 +40,7 @@ function newWindow(startPath) {
   try {if(!statSync(cwd).isDirectory())throw new Error('Not a folder');}catch {dialog.showErrorBox('Starting folder unavailable',`${cwd}\n\nOpening your home folder instead.`);cwd=homedir();}
   const window=new BrowserWindow({width:1150,height:740,minWidth:520,minHeight:300,title:'Qesh',backgroundColor:config.theme.background,titleBarStyle:'hiddenInset',trafficLightPosition:{x:16,y:16},show:false,webPreferences:{preload:join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false}});
   const record={window,config,cwd,exited:false,closing:false,allowClose:false};windows.set(window.id,record);
-  record.host=spawn(runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',[join(root,'desktop/host.mjs')],{stdio:'pipe',env:{...process.env,QENTRAH_BUN:runtime?join(runtime,'bun'):process.env.QENTRAH_BUN||join(homedir(),'.bun/bin/bun'),QENTRAH_NODE:runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',QENTRAH_START_DIR:cwd,QENTRAH_DESKTOP:'1',QENTRAH_THEME:JSON.stringify(config.theme),SHELL:config.shell}});
+  record.host=spawn(runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',[join(root,'desktop/host.mjs')],{stdio:'pipe',env:{...process.env,PATH:[join(root,'bin'),...(runtime?[runtime]:[]),process.env.PATH||'/usr/bin:/bin'].join(':'),QENTRAH_BUN:runtime?join(runtime,'bun'):process.env.QENTRAH_BUN||join(homedir(),'.bun/bin/bun'),QENTRAH_NODE:runtime?join(runtime,'node'):process.env.QENTRAH_NODE||'node',QENTRAH_START_DIR:cwd,QENTRAH_DESKTOP:'1',QESH_RESTORE:config.restore?'1':'0',QESH_STORE_OWNER:windows.size===1?'desktop':`desktop-window-${window.id}`,QENTRAH_THEME:JSON.stringify(config.theme),SHELL:config.shell}});
   const emit=message=>{if(!window.isDestroyed())window.webContents.send('terminal:event',message);};
   createInterface({input:record.host.stdout}).on('line',line=>{try{const message=JSON.parse(line);if(message.type==='state'||message.type==='started')debug(`Host ${message.type}`);if(message.type==='exit')record.exited=true;emit(message);}catch{emit({type:'error',message:'Invalid terminal response'});}});
   record.host.stderr.on('data',data=>{debug(String(data));emit({type:'error',message:String(data)});});record.host.on('error',error=>emit({type:'error',message:error.message}));record.host.on('exit',()=>{record.exited=true;});record.host.stdin.on('error',()=>{});
@@ -45,7 +48,7 @@ function newWindow(startPath) {
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());
   window.on('close',event=>{if(!record.allowClose){event.preventDefault();void closeWindow(record);}});window.once('ready-to-show',()=>{if(!process.env.QENTRAH_TEST_HEADLESS){window.show();window.focus();}});window.loadFile(join(__dirname,'index.html'));return record;
 }
-const controlActions=new Set(['new-tab','switch-tab','rename-tab','close-tab','split-right','split-down','help','new-group','group-tab','reorder-tab','dock-tab','detach-pane','focus-pane','dock-pane']);
+const controlActions=new Set(['new-tab','switch-tab','rename-tab','close-tab','split-right','split-down','help','new-group','group-tab','reorder-tab','dock-tab','detach-pane','focus-pane','dock-pane','new-workspace','switch-workspace','rename-workspace','color-workspace','close-workspace','color-tab','rename-pane','run-command']);
 ipcMain.on('terminal:command',(event,message)=>{
  const record=[...windows.values()].find(record=>record.window.webContents===event.sender);if(!record||!message||typeof message!=='object')return;
  debug(`Command ${message.type}`);
@@ -64,6 +67,7 @@ ipcMain.handle('app:action',async(event,request)=>{
   if(request.action==='open-config'){const error=await shell.openPath(configPath);return error?{error}:{};}
   if(request.action==='new-window'){newWindow();return {};}
   if(request.action==='folder'){const result=await dialog.showOpenDialog(record.window,{title:'Open or create a folder',buttonLabel:'Open in new tab',properties:['openDirectory','createDirectory']});if(!result.canceled)send(record,{type:'control',command:{action:'new-tab',cwd:result.filePaths[0]}});return {};}
+  if(request.action==='check-updates'){const result=await fetch('https://api.github.com/repos/qentrah/qesh/releases',{headers:{Accept:'application/vnd.github+json','User-Agent':'Qesh'}});if(!result.ok)throw new Error(`Release check failed: HTTP ${result.status}`);const releases=await result.json(),latest=releases.find(r=>!r.draft&&(record.config.updateChannel==='preview'||!r.prerelease));return {version:latest?.tag_name,current:require(join(root,'package.json')).version};}
   if(request.action==='about'){await dialog.showMessageBox(record.window,{title:'About Qesh',message:'Qesh · Qentrah',detail:'An OpenTUI shell workspace.\nhttps://qentrah.com/\nLocal shells, tabs and resizable split panes.',buttons:['OK']});return {};}
  }catch(error){return {error:error.message};}
  return {error:'Unknown action'};

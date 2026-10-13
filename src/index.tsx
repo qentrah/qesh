@@ -5,6 +5,7 @@ import { Workspace } from './workspace';
 import { Startup } from './ui/startup';
 import { App } from './ui/app';
 import { attachDesktopControl } from './desktop-control';
+import { persist } from './persistence';
 import { colors } from './ui/theme';
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
@@ -19,9 +20,11 @@ const sessions = new SessionManager();
 let renderer: Awaited<ReturnType<typeof createCliRenderer>> | undefined;
 let quitting = false;
 let detachControl = () => {};
+let detachPersistence = () => {};
 async function quit(code = 0, error?: unknown) {
   if (quitting) return;
   quitting = true;
+  detachPersistence();
   detachControl();
   renderer?.destroy();
   await Promise.allSettled([sessions.shutdown(), renderer?.closed ?? Promise.resolve()]);
@@ -35,6 +38,8 @@ process.on('uncaughtException', error => void quit(1, error));
 process.on('unhandledRejection', error => void quit(1, error));
 try {
   const workspace = new Workspace(sessions, process.cwd(), process.env.SHELL || '/bin/zsh');
+  if(process.env.QESH_PERSIST!=='0')detachPersistence=persist(workspace);
+  if(process.env.QESH_WORKSPACE_NAME){const found=workspace.spaces.find(space=>space.name===process.env.QESH_WORKSPACE_NAME);if(found)workspace.selectSpace(found.id);else workspace.newSpace(process.env.QESH_WORKSPACE_NAME);}
   detachControl = attachDesktopControl(workspace);
   renderer = await createCliRenderer({ exitOnCtrlC: false, exitSignals: [], screenMode: 'alternate-screen', consoleMode: 'disabled', backgroundColor: colors.background, targetFps: 30, maxFps: 30, useMouse: true, enableMouseMovement: true, useKittyKeyboard: null, openConsoleOnError: false });
   renderer.on('render:error', ({ error }) => void quit(1, error));

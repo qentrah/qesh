@@ -1,8 +1,10 @@
 import pty from 'node-pty';
+import {mkdtempSync,rmSync} from 'node:fs';import {join} from 'node:path';import {tmpdir} from 'node:os';
+const dataDir=mkdtempSync(join(tmpdir(),'qh-cli-smoke-'));
 import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 const cli = process.env.QENTRAH_SMOKE_CLI || fileURLToPath(new URL('../bin/qesh', import.meta.url));
-const terminal = pty.spawn(cli, [], { cwd: process.cwd(), cols: 120, rows: 30, name: 'xterm-256color', env: { ...process.env, TERM: 'xterm-256color' } });
+const terminal = pty.spawn(cli, [], { cwd: process.cwd(), cols: 120, rows: 30, name: 'xterm-256color', env: { ...process.env, QESH_PERSIST: '0',QESH_DATA_DIR:dataDir,ZDOTDIR:dataDir, TERM: 'xterm-256color' } });
 let output = '', exit;
 terminal.onData(data => { output = (output + data).slice(-500000); });
 terminal.onExit(event => { exit = event; });
@@ -31,3 +33,5 @@ try {
   try { terminal.kill(); } catch {}
   throw error;
 }
+
+finally {rmSync(dataDir,{recursive:true,force:true});}

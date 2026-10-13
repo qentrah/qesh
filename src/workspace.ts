@@ -1,12 +1,34 @@
 import { EventEmitter } from 'node:events';
+import { randomUUID } from 'node:crypto';
+import { existsSync, statSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { basename } from 'node:path';
 import { SessionManager } from './sessions';
 import { leaves, remove, split, type Axis, type Tree } from './layout';
-export interface Tab { id: string; name: string; tree: Tree; focused: string; group?: string }
+export interface Tab { id: string; name: string; tree: Tree; focused: string; group?: string; color?: string }
+export interface Space { id: string; name: string; color?: string; tabs: Tab[]; active: number; groups: string[] }
 export class Workspace extends EventEmitter {
-  groups: string[] = []; revision = 0; tabs: Tab[] = []; active = 0; private serial = 0;
+  revision = 0; spaces: Space[] = []; selected = 0; private serial = 0;
+  get space() { return this.spaces[this.selected]!; }
+  get tabs() { return this.space?.tabs || []; } set tabs(value: Tab[]) { this.space.tabs=value; }
+  get active() { return this.space?.active || 0; } set active(value: number) { this.space.active=value; }
+  get groups() { return this.space?.groups || []; } set groups(value: string[]) { this.space.groups=value; }
   constructor(readonly sessions: SessionManager, readonly cwd: string, readonly shell: string) {
-    super(); this.on('change', () => { this.revision++; }); sessions.on('change', () => this.emit('change')); this.newTab();
+    super(); this.on('change', () => { this.revision++; }); sessions.on('change', () => this.emit('change')); this.newSpace('Workspace');
+  }
+  newSpace(name='Workspace') { this.spaces.push({id:randomUUID(),name:cleanName(name),tabs:[],active:0,groups:[]});this.selected=this.spaces.length-1;this.newTab(); }
+  selectSpace(id:string) { const index=this.spaces.findIndex(space=>space.id===id);if(index>=0){this.selected=index;this.emit('change');} }
+  renameSpace(id:string,name:string) { const space=this.spaces.find(space=>space.id===id);if(space){space.name=cleanName(name);this.emit('change');} }
+  colorSpace(id:string,color:string) { const space=this.spaces.find(space=>space.id===id);if(space&&validColor(color)){space.color=color||undefined;this.emit('change');} }
+  colorTab(id:string,color:string) { const tab=this.tabs.find(tab=>tab.id===id);if(tab&&validColor(color)){tab.color=color||undefined;this.emit('change');} }
+  closeSpace(id:string) { const index=this.spaces.findIndex(space=>space.id===id),selected=this.space?.id;if(index<0)return;for(const tab of this.spaces[index]!.tabs)for(const pane of leaves(tab.tree))this.sessions.close(pane);this.spaces.splice(index,1);this.selected=selected!==id?Math.max(0,this.spaces.findIndex(space=>space.id===selected)):Math.max(0,Math.min(index,this.spaces.length-1));this.emit('change'); }
+  snapshot() { return {version:1,selected:this.space?.id,spaces:this.spaces.map(space=>({...space,tabs:space.tabs.map(tab=>({...tab,sessions:leaves(tab.tree).map(id=>{const s=this.sessions.sessions.get(id);return {id,cwd:s?.cwd||this.cwd,shell:s?.shell||this.shell,label:s?.label};})}))}))}; }
+  restore(value:any) {
+    if(value?.version!==1||!Array.isArray(value.spaces)||!value.spaces.length)return false;
+    const spaces:Space[]=[],spawn:{id:string;cwd:string;shell:string;label?:string}[]=[],used=new Set<string>();
+    const tree=(node:any,depth=0):Tree=>{if(depth>12||!node||typeof node.id!=='string'||used.has(node.id))throw new Error('Invalid saved layout');used.add(node.id);this.serial=Math.max(this.serial,Number(node.id)||0);if(node.kind==='pane')return {kind:'pane',id:node.id};if(node.kind!=='split'||!['horizontal','vertical'].includes(node.axis))throw new Error('Invalid saved split');return {kind:'split',id:node.id,axis:node.axis,ratio:Math.max(.05,Math.min(.95,Number(node.ratio)||.5)),first:tree(node.first,depth+1),second:tree(node.second,depth+1)};};
+    try {for(const raw of value.spaces.slice(0,30)){if(!Array.isArray(raw.tabs)||!raw.tabs.length)continue;const tabs:Tab[]=[];for(const t of raw.tabs.slice(0,50)){if(typeof t.id!=='string')throw new Error('Invalid saved tab');this.serial=Math.max(this.serial,Number(t.id)||0);const layout=tree(t.tree),ids=leaves(layout);for(const id of ids){const saved=t.sessions?.find((s:any)=>s.id===id);let cwd=saved?.cwd||this.cwd;try{if(!existsSync(cwd)||!statSync(cwd).isDirectory())cwd=homedir();}catch{cwd=homedir();}spawn.push({id,cwd,shell:typeof saved?.shell==='string'&&saved.shell.startsWith('/')?saved.shell:this.shell,label:typeof saved?.label==='string'?saved.label.slice(0,40):undefined});}tabs.push({id:t.id,name:cleanName(t.name),tree:layout,focused:ids.includes(t.focused)?t.focused:ids[0]!,group:t.group,color:validColor(t.color)?t.color:undefined});}spaces.push({id:typeof raw.id==='string'?raw.id:randomUUID(),name:cleanName(raw.name),color:validColor(raw.color)?raw.color:undefined,tabs,active:Math.max(0,Math.min(tabs.length-1,raw.active|0)),groups:Array.isArray(raw.groups)?raw.groups.filter((g:unknown)=>typeof g==='string').slice(0,50):[]});}if(!spaces.length)return false;}catch{return false;}
+    for(const id of [...this.sessions.sessions.keys()])this.sessions.close(id);this.spaces=spaces;this.selected=Math.max(0,spaces.findIndex(s=>s.id===value.selected));for(const saved of spawn){const session=this.sessions.create(saved.id,saved.cwd,saved.shell);session.label=saved.label;}this.emit('change');return true;
   }
   get tab() { return this.tabs[this.active]!; }
   private id() { return String(++this.serial); }
@@ -65,3 +87,6 @@ export class Workspace extends EventEmitter {
     this.tabs.splice(this.active, 1); this.active = Math.max(0, this.active - 1); this.emit('change');
   }
 }
+
+function cleanName(value:unknown){return String(value||"Workspace").replace(/[\x00-\x1f\x7f]/g,"").trim().slice(0,40)||"Workspace";}
+function validColor(value:unknown){return typeof value==="string"&&(value===""||/^#[\da-f]{6}$/i.test(value));}

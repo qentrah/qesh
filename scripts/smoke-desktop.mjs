@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import Xterm from '@xterm/headless';
 const hostPath = process.env.QENTRAH_DESKTOP_HOST || fileURLToPath(new URL('../desktop/host.mjs', import.meta.url));
 const terminal = new Xterm.Terminal({ cols: 110, rows: 30, allowProposedApi: true });
-const host = spawn(process.env.QENTRAH_NODE || 'node', [hostPath], { env: { ...process.env, QENTRAH_START_DIR: process.cwd() }, stdio: 'pipe' });
+const host = spawn(process.env.QENTRAH_NODE || 'node', [hostPath], { env: { ...process.env, QESH_PERSIST: '0', QENTRAH_START_DIR: process.cwd() }, stdio: 'pipe' });
 let closed, failure, workspace;
 const send = message => host.stdin.write(JSON.stringify(message) + '\n');
 terminal.onData(data => send({ type: 'input', data }));

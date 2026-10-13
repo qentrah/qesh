@@ -12,3 +12,6 @@ desktop/xterm.css
 coverage/
 work/
 dist/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

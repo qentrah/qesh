@@ -8,6 +8,68 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 ![Qesh command-line workspace](preview.png)
 
+## Install and quick commands
+
+Qesh 0.4.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+
+```sh
+curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
+sh /tmp/qesh-install.sh
+~/.local/bin/qh help
+~/.local/bin/qh
+```
+
+The installer downloads the native Apple Silicon or Intel release from GitHub, verifies SHA-256 and the app signature, and installs into a versioned local folder. It creates `qh` and `qesh` launchers in `~/.local/bin`; add that folder to your shell PATH if necessary. It refuses to replace unrelated commands. `QESH_BIN_DIR` and `QESH_INSTALL_DIR` choose other destinations. The app is locally signed and not notarized.
+
+```sh
+qh config             # Open the global configuration
+qh config path        # Print its path
+qh config validate    # Validate JSON and settings
+qh update --check     # Check Qesh releases
+qh update             # Update a managed install if a newer version exists
+qh update-all --dry-run
+qh update-all         # Run only the updates you configured
+qh workspace list     # List saved workspace records
+qh workspace Research # Open a named CLI workspace
+```
+
+`gh` remains GitHub CLI. Qesh uses `qh`. For a source checkout, run `./bin/qh`; update the checkout with Git rather than the managed installer. Node.js 22.13+ and Bun 1.3.5+ are required for source development. Packaged downloads supply their runtimes.
+
+### Custom commands and CLI updates
+
+Add command objects to your global configuration. No CLI updates are enabled by default.
+
+```json
+{
+  "commands": {
+    "dev": {
+      "command": "npm run dev",
+      "cwd": "~/Documents/my-project",
+      "description": "Start the development server"
+    }
+  },
+  "updates": {
+    "codex": { "command": "npm install -g @openai/codex" },
+    "claude": { "command": "npm install -g @anthropic-ai/claude-code" },
+    "opencode": { "command": "opencode upgrade" }
+  }
+}
+```
+
+Run `qh dev` to execute a configured command with your shell and permissions. Desktop Commands lists these shortcuts and starts the selected command in a new tab. Command names use lowercase letters, digits, and hyphens; built-in names are reserved. Custom command arguments belong in the JSON command string. `qh update-all` runs the configured list in order and stops on the first failure. It does not discover or change other installed CLIs. `updateChannel` accepts `preview` (default) or `stable`.
+
+### Local workspace restore
+
+Workspace layouts are stored in `~/Library/Application Support/Qentrah/Qesh/workspaces.sqlite`. There is no server database or synchronization. The store records workspaces, tabs, groups, split ratios, focus, colors, session labels, and working directories. Directory detection follows the shell's current directory through macOS process information. Missing folders fall back to the home folder.
+
+On reopen, Qesh creates fresh shell processes in those folders. It does not revive exited programs, reuse their PIDs, replay commands, or restore terminal output. Set `restore` to `false` for a fresh layout. Independent windows have separate saved records. Closing a workspace removes it from that record.
+
+The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it. The plus button sits at the bottom. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
+
+### Running-tool identities
+
+Foreground process names and terminal titles identify OpenCode, Claude, and Codex where available. Detection is best effort; wrappers can hide the program name. Rename a session label manually when needed. Configure `apps` entries with `name`, literal `match`, and an `icon` of `opencode`, `claude`, `codex`, or `shell`. The Codex entry uses the OpenAI mark. See NOTICE.md for sources and trademark attribution.
+
 ## Features
 
 - Real login shells with command history, completion, Unicode, ANSI/true-color output, bracketed paste, and full-screen programs such as vim and top.
@@ -21,7 +83,7 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 - Confirmation before closing live sessions, retained output for exited shells, and a restart action.
 - Bounded scrollback, selected-text copying, and child-process cleanup on quit.
 
-Each launch starts fresh. Tabs and groups are not restored across launches.
+Layouts restore from the local SQLite store unless `restore` is disabled. Reopened shells have new PIDs.
 
 ## Download the desktop app
 
@@ -31,7 +93,7 @@ The supplied build targets **Apple Silicon macOS** and includes Electron, Bun, N
 
 ## Run from source
 
-Requires **macOS**, **Bun 1.3.5+**, and **Node.js 22+** on PATH. Development is verified with Bun 1.3.5 and Node.js 24.12.0.
+Requires **macOS**, **Bun 1.3.5+**, and **Node.js 22.13+** on PATH. Development is verified with Bun 1.3.5 and Node.js 24.12.0.
 
 ```sh
 git clone https://github.com/qentrah/qesh.git
@@ -116,7 +178,7 @@ Pane minimums are 20 columns and 5 rows. When a window is too small for the spli
 
 ## Configuration
 
-**Configure…** opens `qesh.config.json` in a JSON editor with validation, Save, and Open in Editor. In source development it is at the project root. For packaged apps it is beside the `.app`, outside the signed bundle.
+**Configure…** opens the global JSON editor with validation, Save, and Open in Editor. On macOS the active file is `~/Library/Application Support/Qentrah/Qesh/config.json`. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
 
 ```json
 {
@@ -178,7 +240,7 @@ To regenerate the icon, install Pillow and run `python3 scripts/generate-app-ico
 - **Electron + browser xterm** provides the standalone window. A local Unix socket connects desktop workspace controls to Bun; renderer IPC is isolated and restricted to app actions. No network server is required.
 - **TermCN adaptations** provide controlled tabs, confirmation dialogs, help, and theme infrastructure. The terminal pane and session management are custom.
 
-Current limits: macOS first; no workspace restore across launches; no AI features or website integration. Workspace mouse events support focus, selection, and resizing; mouse input is not forwarded to child terminal programs. Fonts and glyph coverage depend on the selected terminal font.
+Current limits: macOS first; restoration starts fresh shells and does not resume previous programs or terminal output; no AI features or website integration. Workspace mouse events support focus, selection, and resizing; mouse input is not forwarded to child terminal programs. Fonts and glyph coverage depend on the selected terminal font.
 
 ## Verify and contribute
 
@@ -187,6 +249,7 @@ bun run check
 bun test
 node scripts/smoke-cli.mjs
 node scripts/smoke-desktop.mjs
+node scripts/smoke-restore.mjs
 bun run build:desktop
 ```
 

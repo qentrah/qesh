@@ -6,6 +6,7 @@ export type Request =
   | { type: 'close'; id: string }
   | { type: 'shutdown' };
 export type Response =
+  | { type: 'info'; id: string; cwd?: string; process?: string }
   | { type: 'spawned'; id: string; pid: number }
   | { type: 'output'; id: string; data: string }
   | { type: 'exit'; id: string; code: number; signal?: number }

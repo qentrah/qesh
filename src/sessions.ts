@@ -9,7 +9,7 @@ import type { Request, Response } from './protocol';
 export interface Session {
   id: string; terminal: Terminal; cwd: string; shell: string;
   status: 'starting' | 'running' | 'exited' | 'error';
-  cursorVisible: boolean; pid?: number; exitCode?: number; error?: string; scroll: number;
+  cursorVisible: boolean; title?: string; label?: string; process?: string; pid?: number; exitCode?: number; error?: string; scroll: number;
 }
 export class SessionManager extends EventEmitter {
   readonly sessions = new Map<string, Session>();
@@ -50,7 +50,7 @@ export class SessionManager extends EventEmitter {
       return false;
     });
     terminal.onData(data => this.input(id, data)); // Device-status responses from the emulator.
-    terminal.onTitleChange(() => this.emit('change'));
+    terminal.onTitleChange(title => {session.title=title.slice(0,120);this.emit('change');});
     this.send({ type: 'spawn', id, cwd, shell, args: ['-l'], cols, rows });
     return session;
   }
@@ -62,6 +62,7 @@ export class SessionManager extends EventEmitter {
       session.terminal.write(message.data, () => { this.send({ type: 'ack', id: session.id, size: message.data.length }); this.emit('output', session.id); });
       return;
     }
+    if (message.type === 'info') {session.cwd=message.cwd||session.cwd;session.process=message.process;this.emit('change');}
     if (message.type === 'spawned') { session.pid = message.pid; session.status = 'running'; }
     if (message.type === 'exit') { session.status = 'exited'; session.exitCode = message.code; }
     if (message.type === 'error') { session.status = 'error'; session.error = message.message; }

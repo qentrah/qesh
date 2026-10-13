@@ -13,5 +13,9 @@
     "primary": "#9cdcfe",
     "error": "#f48771",
     "selection": "#264f78"
-  }
+  },
+  "restore": true,
+  "updateChannel": "preview",
+  "commands": {},
+  "updates": {}
 }

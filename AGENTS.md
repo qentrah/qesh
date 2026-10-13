@@ -9,4 +9,4 @@ must not be consumed by workspace shortcuts except the Ctrl+B prefix.
 
 Run `bun run check`, `bun test`, and the relevant CLI/desktop smoke checks.
 Keep generated bundles, app builds, logs, shell history, and local credentials
-out of Git. Config JSON is editable beside the signed app, never inside it.
+out of Git. Config JSON and SQLite are local application data, never signed bundle contents. Tests must isolate QESH_DATA_DIR or disable persistence.

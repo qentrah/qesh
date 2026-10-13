@@ -46,9 +46,17 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else action();
   }
   useEffect(() => {
-    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string }) => {
+    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string }) => {
       if (modalRef.current) return;
-      if (message.action === 'new-tab') workspace.newTab(message.cwd);
+      if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
+      else if(message.action==='new-workspace')workspace.newSpace(message.name);
+      else if(message.action==='switch-workspace'&&message.id)workspace.selectSpace(message.id);
+      else if(message.action==='rename-workspace'&&message.id&&message.name)workspace.renameSpace(message.id,message.name);
+      else if(message.action==='color-workspace'&&message.id)workspace.colorSpace(message.id,message.color||'');
+      else if(message.action==='color-tab'&&message.id)workspace.colorTab(message.id,message.color||'');
+      else if(message.action==='rename-pane'&&message.id&&message.name){const session=workspace.sessions.sessions.get(message.id);if(session){session.label=message.name.slice(0,40);workspace.emit('change');}}
+      else if(message.action==='close-workspace'&&message.id){const space=workspace.spaces.find(space=>space.id===message.id);if(space)confirm('Close workspace?',space.tabs.flatMap(tab=>leaves(tab.tree)),()=>{workspace.closeSpace(space.id);if(!workspace.spaces.length)onQuit();});}
+      else if (message.action === 'new-tab') {if(message.id)workspace.selectSpace(message.id);workspace.newTab(message.cwd);}
       else if (message.action === 'switch-tab' && message.id) workspace.selectTab(message.id);
       else if (message.action === 'rename-tab' && message.id && message.name) { workspace.selectTab(message.id); workspace.rename(message.name); }
       else if (message.action === 'close-tab' && message.id) { workspace.selectTab(message.id); confirm('Close tab?', leaves(workspace.tab.tree), closeTab); }
@@ -65,8 +73,8 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     };
     workspace.on('desktop-command',command); return () => { workspace.off('desktop-command',command); };
   }, [workspace]);
-  function closePane() { workspace.closePane(); if (!workspace.tabs.length) onQuit(); }
-  function closeTab() { workspace.closeTab(); if (!workspace.tabs.length) onQuit(); }
+  function closePane() { workspace.closePane(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
+  function closeTab() { workspace.closeTab(); if (!workspace.tabs.length) {workspace.closeSpace(workspace.space.id);if(!workspace.spaces.length)onQuit();} }
   function resizeDivider(divider: Divider, x: number, y: number) {
     if (!tab || modalRef.current) return;
     const { parent, axis } = divider;
@@ -140,7 +148,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else if (key.name === 'r') { setRename(currentTab.name); setModal({ kind: 'rename' }); }
     else if (key.name === 'x') confirm('Close this shell?', [id], closePane);
     else if (key.name === 'w') confirm('Close this tab and its shells?', leaves(currentTab.tree), closeTab);
-    else if (key.name === 'q') confirm('Quit Qesh?', workspace.tabs.flatMap(t => leaves(t.tree)), onQuit);
+    else if (key.name === 'q') confirm('Quit Qesh?', workspace.spaces.flatMap(space=>space.tabs.flatMap(t=>leaves(t.tree))), onQuit);
     else if (key.name === 'pageup' || key.name === 'pagedown') { workspace.sessions.scroll(id, (key.name === 'pageup' ? 1 : -1) * Math.max(1, (session?.terminal.rows ?? 24) - 2)); update(); }
     else if (key.name === 'y') copySelection();
     else if (key.name === 'return' || key.name === 'enter') workspace.sessions.restart(id);

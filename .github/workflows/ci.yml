@@ -37,6 +37,7 @@ jobs:
       - run: bun test
       - run: node scripts/smoke-cli.mjs
       - run: node scripts/smoke-desktop.mjs
+      - run: node scripts/smoke-restore.mjs
       - name: Build standalone app
         run: node scripts/build-macos-app.mjs dist/Qesh.app
       - name: Smoke-test bundled runtimes and shell sessions
@@ -44,7 +45,9 @@ jobs:
           QENTRAH_NODE: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/node
           QENTRAH_BUN: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/runtime/bun
           QENTRAH_DESKTOP_HOST: ${{ github.workspace }}/dist/Qesh.app/Contents/Resources/terminal/desktop/host.mjs
-        run: node scripts/smoke-desktop.mjs
+        run: |
+          node scripts/smoke-desktop.mjs
+          node scripts/smoke-restore.mjs
       - name: Verify signature after runtime test
         run: codesign --verify --deep --strict dist/Qesh.app
       - name: Package app, sidecar configuration, and checksum
