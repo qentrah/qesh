@@ -6,11 +6,13 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 [Website & screenshots](https://qentrah.com/qesh) · [Download the macOS app](https://github.com/qentrah/qesh/releases) · [Report an issue](https://github.com/qentrah/qesh/issues) · [Contribute](CONTRIBUTING.md)
 
-![Qesh command-line workspace](preview.png)
+![Qesh on macOS with four live Pi, OpenCode, and Codex sessions](docs/images/qesh-sessions.png)
+
+Drag a split line to resize that branch. Drag the center junction to resize all connected splits together, or use the arrow keys while the junction is focused.
 
 ## Install and quick commands
 
-Qesh 0.6.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+Qesh includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
 curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh

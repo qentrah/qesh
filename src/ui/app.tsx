@@ -4,7 +4,7 @@ import { copyText } from '../clipboard';
 import { basename, sep } from 'node:path';
 import { homedir } from 'node:os';
 import type { Workspace } from '../workspace';
-import { geometry, leaves, minimum, nearestDivider, neighbor, setRatio, type Divider } from '../layout';
+import { geometry, leaves, minimum, resizeJunction, nearestDivider, neighbor, setRatio, type Divider } from '../layout';
 import { encodeKey, KEYMAP } from '../keys';
 import { Tabs } from '../termcn/ui/tabs';
 import { Dialog } from '../termcn/ui/dialog';
@@ -49,7 +49,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else action();
   }
   useEffect(() => {
-    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; target?:string; x?:number; y?:number; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
+    const command = (message: { action: string; id?: string; ids?: string[]; name?: string; group?: string; before?: string; edge?: string; target?:string; x?:number; y?:number; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
       if(message.action==='configure'&&message.config){workspace.sessions.setScrollback(message.config.scrollback);workspace.maxWorkspaces=message.config.storage.maxWorkspaces;applyTheme(message.config.theme);workspace.emit('change');return;}
       if (modalRef.current) return;
       if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
@@ -65,6 +65,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       else if (message.action === 'rename-tab' && message.id && message.name) { if(!workspace.selectTab(message.id))return; workspace.rename(message.name); }
       else if (message.action === 'close-tab' && message.id) { if(!workspace.selectTab(message.id))return; (message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close tab?', leaves(workspace.tab.tree), closeTab); }
       else if(message.action==='close-pane'&&message.id){if(!workspace.activatePane(message.id))return;(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close this shell?',[message.id],closePane);}
+      else if(message.action==='resize-junction'&&message.ids&&workspace.tab){const current=workspace.tab;const next=resizeJunction(current.tree,{x:0,y:0,width:layoutRef.current?.dividers[0]?.parent.width??0,height:layoutRef.current?.dividers[0]?.parent.height??0},current.focused,message.ids,message.x!,message.y!);if(next!==current.tree){current.tree=next;workspace.emit('change');}}
       else if(message.action==='resize-split'&&message.id&&Number.isFinite(message.x)&&Number.isFinite(message.y)){const divider=layoutRef.current?.dividers.find(item=>item.id===message.id);if(divider)resizeDivider(divider,message.x!,message.y!);}
       else if(message.action==='equalize')workspace.equalize();
       else if(message.action==='restart-pane'&&message.id)workspace.sessions.restart(message.id);

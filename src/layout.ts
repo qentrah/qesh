@@ -65,3 +65,34 @@ export function neighbor(panes: Map<string, Rect>, active: string, direction: st
   }
   return best;
 }
+
+// Resize a junction atomically so aligned branches cannot drift apart at minimum sizes.
+export function resizeJunction(tree: Tree, bounds: Rect, focused: string, ids: string[], x: number, y: number): Tree {
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Array.isArray(ids) || ids.length < 2 || new Set(ids).size !== ids.length) return tree;
+  const dividers = geometry(tree, bounds, focused).dividers;
+  const selected = dividers.filter(d => ids.includes(d.id));
+  if (selected.length !== ids.length) return tree;
+  const columns = selected.filter(d => d.axis === 'horizontal'), rows = selected.filter(d => d.axis === 'vertical');
+  if (!columns.length || !rows.length) return tree;
+  const cx = columns[0].x, cy = rows[0].y;
+  if (columns.some(d => d.x !== cx || cy < d.y - 1 || cy > d.y + d.height) || rows.some(d => d.y !== cy || cx < d.x - 1 || cx > d.x + d.width)) return tree;
+  const connected = dividers.filter(d => d.axis === 'horizontal' ? d.x === cx && cy >= d.y - 1 && cy <= d.y + d.height : d.y === cy && cx >= d.x - 1 && cx <= d.x + d.width);
+  if (connected.some(d => !ids.includes(d.id))) return tree;
+  function find(node: Tree, id: string): Extract<Tree, {kind:'split'}> | undefined {
+    if (node.kind === 'pane') return;
+    return node.id === id ? node : find(node.first,id) ?? find(node.second,id);
+  }
+  let left = -Infinity, right = Infinity, top = -Infinity, bottom = Infinity;
+  for (const d of selected) {
+    const node = find(tree,d.id)!; const a = minimum(node.first), b = minimum(node.second);
+    if (d.axis === 'horizontal') { left = Math.max(left,d.parent.x+a.width); right = Math.min(right,d.parent.x+d.parent.width-1-b.width); }
+    else { top = Math.max(top,d.parent.y+a.height); bottom = Math.min(bottom,d.parent.y+d.parent.height-1-b.height); }
+  }
+  if (left > right || top > bottom) return tree;
+  x = Math.max(left,Math.min(right,Math.round(x))); y = Math.max(top,Math.min(bottom,Math.round(y)));
+  const ratios = new Map(selected.map(d => [d.id,d.axis === 'horizontal' ? (x-d.parent.x)/(d.parent.width-1) : (y-d.parent.y)/(d.parent.height-1)]));
+  function apply(node: Tree): Tree {
+    return node.kind === 'pane' ? node : {...node,ratio:ratios.get(node.id) ?? node.ratio,first:apply(node.first),second:apply(node.second)};
+  }
+  return apply(tree);
+}

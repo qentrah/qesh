@@ -64,7 +64,7 @@ function newWindow(startPath) {
   window.webContents.setWindowOpenHandler(()=>({action:'deny'}));window.webContents.on('will-navigate',event=>event.preventDefault());
   window.on('resize',()=>saveUI(record));window.on('close',event=>{if(!record.allowClose){event.preventDefault();void closeWindow(record);}});window.once('ready-to-show',()=>{if(!process.env.QENTRAH_TEST_HEADLESS){window.show();window.focus();}});window.loadFile(join(__dirname,'index.html'));return record;
 }
-const controlActions=new Set(['new-tab','switch-tab','rename-tab','close-tab','split-right','split-down','help','new-group','group-tab','reorder-tab','dock-tab','detach-pane','focus-pane','dock-pane','new-workspace','switch-workspace','rename-workspace','color-workspace','close-workspace','color-tab','rename-pane','run-command','rename-group','close-pane','restart-pane','equalize','resize-split']);
+const controlActions=new Set(['new-tab','switch-tab','rename-tab','close-tab','split-right','split-down','help','new-group','group-tab','reorder-tab','dock-tab','detach-pane','focus-pane','dock-pane','new-workspace','switch-workspace','rename-workspace','color-workspace','close-workspace','color-tab','rename-pane','run-command','rename-group','close-pane','restart-pane','equalize','resize-split','resize-junction']);
 ipcMain.on('terminal:command',(event,message)=>{
  const record=[...windows.values()].find(record=>record.window.webContents===event.sender);if(!record||!message||typeof message!=='object')return;
  debug(`Command ${message.type}`);
