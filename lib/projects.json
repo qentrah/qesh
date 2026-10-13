@@ -78,6 +78,11 @@
     "url": "https://github.com/qentrah/qesh"
   },
   {
+    "name": "qh-pixels",
+    "description": "Agent-authored pixel animation with a preview studio, local MCP, and a free motion pack.",
+    "url": "https://github.com/qentrah/qh-pixels"
+  },
+  {
     "name": "react-messenger",
     "description": "Chat UX components built with React, inspired by Facebook Messenger",
     "url": "https://github.com/qentrah/react-messenger"
