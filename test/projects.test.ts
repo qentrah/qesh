@@ -9,7 +9,7 @@ test('public project catalog supports packages and source checkouts without gues
 });
 test('fork and bug plans preserve literal text and dry runs never publish or execute',async()=>{
  let calls=0;const execute=()=>{calls++;return {status:7};},log=()=>{};
- expect(planProject('fork',['qesh']).args).toEqual(['repo','fork','qentrah/qesh','--clone=false']);const title='$(touch /tmp/should-not-exist); `whoami`';expect(planProject('bug',['qesh','--title',title,'--body','literal']).args).toContain('--title='+title);
+ expect(planProject('fork',['qesh']).args).toEqual(['repo','fork','qentrah/qesh','--clone=false','--remote=false']);const title='$(touch /tmp/should-not-exist); `whoami`';expect(planProject('bug',['qesh','--title',title,'--body','literal']).args).toContain('--title='+title);
  expect(await runProjectCommand('bug',['qesh','--dry-run'],{execute,log})).toBe(0);expect(calls).toBe(0);expect(await runProjectCommand('bugs',['qesh'],{execute,log})).toBe(7);expect(calls).toBe(1);
  await expect(runProjectCommand('fork',['qesh'],{execute:()=>({error:Object.assign(new Error('missing'),{code:'ENOENT'})}),log})).rejects.toThrow('gh auth login');expect(()=>planProject('bug',['qesh','--body-file','/missing-report'])).toThrow('does not exist');expect(()=>planProject('bug',['qesh','--body','one','--body-file','two'])).toThrow('either');
 });
