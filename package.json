@@ -1,6 +1,6 @@
 {
   "name": "qesh",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "type": "module",
   "bin": {
     "qesh": "./bin/qesh",

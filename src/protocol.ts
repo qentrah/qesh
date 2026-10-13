@@ -1,6 +1,6 @@
 type SessionRequest =
   | { type: 'spawn'; id: string; generation: number; shell: string; args: string[]; cwd: string; cols: number; rows: number }
-  | { type: 'input'; id: string; data: string }
+  | { type: 'input'; id: string; data: string; encoding?:'latin1' }
   | { type: 'resize'; id: string; cols: number; rows: number }
   | { type: 'ack'; id: string; size: number }
   | { type: 'close'; id: string }

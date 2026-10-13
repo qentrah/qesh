@@ -10,7 +10,7 @@ Built by [Qentrah](https://qentrah.com/) with [OpenTUI](https://github.com/anoma
 
 ## Install and quick commands
 
-Qesh 0.5.1 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
+Qesh 0.6.0 includes the Node.js `qh` command. The managed macOS installer bundles both Node and Bun:
 
 ```sh
 curl -fsSL https://qentrah.com/qesh/install.sh -o /tmp/qesh-install.sh
@@ -66,7 +66,7 @@ Workspace layouts are stored in `~/Library/Application Support/Qentrah/Qesh/work
 
 On reopen, Qesh creates fresh shell processes in those folders. It does not revive exited programs, reuse their PIDs, replay commands, or restore terminal output. Set `restore` to `false` for a fresh layout. Independent windows have separate saved records. Closing a workspace removes it from that record.
 
-The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it directly in the sidebar; Enter saves and Escape cancels. The plus button sits at the bottom. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
+The sidebar workspace and tab three-dot menus expose rename, color, new tab, split, and close actions. Double-click a workspace, tab, or shell label to rename it directly in the sidebar; Enter saves and Escape cancels. The bottom toolbar provides New, Commands, Settings, and the global menu. Workspace colors provide a default accent for their tabs; individual tab colors override it. Live-session closure asks for confirmation.
 
 ### Running-tool identities
 
@@ -147,9 +147,9 @@ The three-dot menu exposes **New Tab**, **New Window**, **Configure…**, **Spli
 | Cmd+Shift+P | Search commands |
 | Cmd+Q | Quit all windows, with confirmation |
 
-Click a sidebar tab to switch. Double-click its name to rename it. The close button appears on hover or keyboard focus. Drag tabs to reorder them or drop them on a named group. Drag a tab or shell row to an edge of the terminal area to dock it. The **Tab** button beside a split shell detaches that shell into its own tab. These actions preserve shell processes.
+Click a sidebar tab to switch. Double-click its name to rename it. The close button appears on hover or keyboard focus. Drag tabs to reorder them or drop them on a named group. Drag a tab or shell row to an edge of the terminal area to dock it. The session menu’s **Move to new tab** action detaches a split shell into its own tab. These actions preserve shell processes.
 
-Drag the gap between split panes to resize them, or use the prefix shortcuts below. The sidebar edge is also draggable; focus it and press Left/Right for keyboard resizing. Groups organize tabs for the current launch. **Open / Create Folder** uses the native macOS folder picker and starts a shell in the chosen filesystem folder.
+Drag the gap between split panes to resize them, or use the prefix shortcuts below. The sidebar edge is also draggable; focus it and press Left/Right for keyboard resizing. Groups organize tabs and are restored with the saved layout. **Open / Create Folder** uses the native macOS folder picker and starts a shell in the chosen filesystem folder.
 
 Open **Commands** and type `/help`, `/config`, `/new-tab`, `/new-window`, `/split-right`, `/split-down`, `/group`, `/folder`, or `/about`. These are application commands entered in the Commands panel; ordinary shell input stays with the shell.
 
@@ -180,7 +180,7 @@ Pane minimums are 20 columns and 5 rows. When a window is too small for the spli
 
 ## Configuration
 
-**Settings…** opens sidebar pages for Appearance, Terminal, Storage, Keyboard, Commands, and Updates. Changes save automatically and show **Saved** after validation and an atomic write. **Open Configuration JSON** opens `~/Library/Application Support/Qentrah/Qesh/config.jsonc` in VS Code, Cursor, Windsurf, or the associated editor. JSONC accepts comments and trailing commas; documentation links are included at the top. Editor changes are reloaded automatically in open desktop windows. Invalid edits leave the active settings unchanged. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
+**Settings…** opens a separate, resizable window with Appearance, Terminal, Storage, Keyboard, Commands, Updates, and About pages. Changes save automatically and show **Saved** after validation and an atomic write. **Open Configuration JSON** opens `~/Library/Application Support/Qentrah/Qesh/config.jsonc` in VS Code, Cursor, Windsurf, or the associated editor. JSONC accepts comments and trailing commas; documentation links are included at the top. Editor changes are reloaded automatically in open desktop windows. Invalid edits leave the active settings unchanged. The previous sidecar `qesh.config.json` is imported on first use if no global configuration exists. Use `qh config path` to find the active file.
 
 ```json
 {
@@ -266,12 +266,20 @@ Qesh's original source is [MIT](LICENSE), copyright Qentrah. Third-party code re
 
 ### Desktop settings and shortcuts
 
-Use the gear in the sidebar or Cmd+, to open Settings. Terminal, Commands, and Settings share the sidebar; switching views preserves shell processes. Rename workspaces, tabs, pane labels, and groups inline with a double-click. Tab and workspace Color menus offer Cyan, Blue, Green, Amber, Violet, and Rose, Default, plus the macOS color chooser.
+Use the gear in the sidebar or Cmd+, to open Settings. Settings opens in a separate native window; closing it preserves the terminal sessions. Rename workspaces, tabs, pane labels, and groups inline with a double-click. Tab and workspace Color menus offer Cyan, Blue, Green, Amber, Violet, and Rose, Default, plus the macOS color chooser.
 
 GUI `shortcuts` map action names to Electron accelerators, such as `"new-tab": "Cmd+T"`. Record them on the Keyboard page; Backspace disables a binding, Escape cancels, and duplicate or reserved editing/shell keys are rejected. This does not change the terminal Ctrl+B prefix. The config file links to [configuration](https://qentrah.com/docs/qesh/configuration) and [keyboard customization](https://qentrah.com/docs/qesh/keyboard).
 
 `storage.enabled` enables local SQLite layout saves; `restore` enables restore on launch. `storage.saveDelayMs` batches saves (100–5000 ms), `storage.maxWorkspaces` limits new workspaces (1–100), and `scrollback` bounds per-shell emulator history (100–50000 lines). Existing workspaces survive lowering the creation limit. SQLite stores layout metadata and folders; terminal output, running processes, secrets, and environment variables are not saved. Storage shows the database path and size. Font, colors, tab position, scrollback, and creation limits apply immediately; shell and starting folder apply to new windows.
 
-Appearance includes Charcoal, Graphite, and Midnight themes. Save the current palette with a name to add a custom theme. Settings and Commands close with their × button or Escape. Context menus and theme selectors close when you click outside. Each workspace has a + action for a new tab in that workspace. Recent app errors are bounded to 30 entries in memory, visible in Storage, and never uploaded.
+Appearance includes Charcoal, Graphite, and Midnight themes. Save the current palette with a name to add a custom theme. Close Settings with the native window close button. Commands closes with its × button or Escape. Context menus and theme selectors close when you click outside. Each workspace menu has **New tab** for that workspace. Recent app errors are bounded to 30 entries in memory, visible in Storage, and never uploaded.
 
-The sidebar displays every workspace, its tabs, and connected session rows. Select a session to focus its workspace, tab, and pane. Drag tabs and panes within the active workspace; select another workspace before docking its items. The lower toolbar groups Terminal, New, Commands, and Settings. Workspace and tray menus include New tab and quick ready-to-use themes. Window size, sidebar width, last Settings page, and last app view are stored in local SQLite when saving is enabled. `qh diagnostics` validates configuration and prints storage location plus the last saved app startup, main-process memory, and session count. Performance samples stay local. Bundled `qh` is on the PATH of all app shells, including restored shells.
+The sidebar displays every workspace, its tabs, and connected session rows. Select a session to focus its workspace, tab, and pane. Drag tabs and panes within the active workspace; select another workspace before docking its items. The lower toolbar groups Terminal, New, Commands, Settings, and the global menu. Workspace and global menus include New tab and ready-to-use themes. Window size, sidebar width, last Settings page, and last app view are stored in local SQLite when saving is enabled. `qh diagnostics` validates configuration and prints storage location plus the last saved app startup, main-process memory, and session count. Performance samples stay local. Bundled `qh` is on the PATH of all app shells, including restored shells.
+
+Theme, tab position, and release channel use custom dropdowns with arrow/Home/End navigation, typeahead, Escape, and outside-click dismissal. Settings dimensions and the last page are saved separately in SQLite.
+
+Workspace names toggle the tab tree on click and rename on double-click. Item menus appear on hover or keyboard focus. Session menus offer new split sessions, a new tab in that folder, rename, detach, restart after exit, and close. Deleting a workspace removes its saved layout and closes its sessions after native confirmation. The global menu sits at the bottom of the sidebar and includes themes, update checks, shortcuts, and About.
+
+New tabs inherit the focused shell's working directory. Bundled qh and Node are restored to the zsh PATH after user login files, including restored sessions. Equalize Splits resets split ratios without restarting shells. See [terminal design notes](docs/terminal-notes.md) for Ghostty references and the tested limits.
+
+Mouse wheel input now follows the inner terminal mode: normal shell output scrolls history, alternate-screen pagers receive arrow keys, and mouse-enabled CLIs receive SGR, UTF-8, or legacy mouse reports. Shift overrides mouse reporting for text selection/history. Split dividers are faintly visible and highlight on hover. Session/tab actions resolve IDs across workspaces, reject stale targets, and preserve other shell processes. Double-click rename waits for the click sequence instead of losing its target during a sidebar rebuild. Default workspace/tab names are unique; split shell labels are numbered unless renamed.

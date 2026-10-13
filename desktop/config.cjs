@@ -6,7 +6,7 @@ const shortcuts={'new-tab':'Cmd+T','new-window':'Cmd+N','new-workspace':'Cmd+Shi
 const defaults = { defaultPath: '~', shell: '/bin/zsh', fontFamily: 'Menlo, Monaco, monospace', fontSize: 14, tabsPosition: 'left', theme: { background: '#0e0d11', surface: '#141318', foreground: '#d4d4d4', muted: '#a09ca8', border: '#45414e', primary: '#9cdcfe', error: '#f48771', selection: '#264f78' }, commands: {}, updates: {}, apps: {codex:{name:'Codex',match:'codex',icon:'codex'},claude:{name:'Claude',match:'claude',icon:'claude'},opencode:{name:'OpenCode',match:'opencode',icon:'opencode'}}, themes:{}, shortcuts, scrollback:5000, storage:{enabled:true,saveDelayMs:250,maxWorkspaces:30}, restore: true, updateChannel: 'preview' };
 function validate(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Configuration must be a JSON object.');
-  for (const key of Object.keys(value)) if (!(key in defaults)) throw new Error(`Unknown setting: ${key}`);
+  for (const key of Object.keys(value)) if (!Object.hasOwn(defaults,key)) throw new Error(`Unknown setting: ${key}`);
   const config = { ...defaults, ...value, theme: { ...defaults.theme, ...value.theme }, shortcuts:{...shortcuts,...value.shortcuts},storage:{...defaults.storage,...value.storage} };
   if (typeof config.defaultPath !== 'string' || (!isAbsolute(config.defaultPath) && config.defaultPath !== '~' && !config.defaultPath.startsWith('~/'))) throw new Error('defaultPath must be an absolute path or begin with ~/');
   if (typeof config.shell !== 'string' || !isAbsolute(config.shell)) throw new Error('shell must be an absolute path.');
@@ -14,7 +14,7 @@ function validate(value) {
   if (!Number.isInteger(config.fontSize) || config.fontSize < 10 || config.fontSize > 28) throw new Error('fontSize must be between 10 and 28.');
   if (!['left','top'].includes(config.tabsPosition)) throw new Error('tabsPosition must be left or top.');
   if (value.theme !== undefined && (!value.theme || typeof value.theme !== 'object' || Array.isArray(value.theme))) throw new Error('theme must be an object.');
-  for (const [key, color] of Object.entries(config.theme)) if (!(key in defaults.theme) || typeof color !== 'string' || !/^#[\da-f]{6}$/i.test(color)) throw new Error(`Invalid theme color: ${key}; use #RRGGBB.`);
+  for (const [key, color] of Object.entries(config.theme)) if (!Object.hasOwn(defaults.theme,key) || typeof color !== 'string' || !/^#[\da-f]{6}$/i.test(color)) throw new Error(`Invalid theme color: ${key}; use #RRGGBB.`);
   for(const key of ['commands','updates']) {
     if(!config[key]||typeof config[key]!=='object'||Array.isArray(config[key]))throw new Error(`${key} must be an object.`);
     for(const [name,item] of Object.entries(config[key])) {
@@ -29,13 +29,13 @@ function validate(value) {
   if(typeof config.restore!=='boolean')throw new Error('restore must be true or false.');
   if(!['preview','stable'].includes(config.updateChannel))throw new Error('updateChannel must be preview or stable.');
   if(!config.themes||typeof config.themes!=='object'||Array.isArray(config.themes)||Object.keys(config.themes).length>20)throw new Error('themes must be an object with up to 20 named themes.');
-  for(const [name,theme]of Object.entries(config.themes)){if(!name.trim()||name.length>40||!theme||typeof theme!=='object'||Array.isArray(theme))throw new Error('Invalid saved theme.');for(const key of Object.keys(defaults.theme))if(typeof theme[key]!=='string'||!/^#[\da-f]{6}$/i.test(theme[key]))throw new Error(`Theme ${name} needs all theme colors as #RRGGBB.`);for(const key of Object.keys(theme))if(!(key in defaults.theme))throw new Error(`Unknown theme color: ${key}`);}
+  for(const [name,theme]of Object.entries(config.themes)){if(!name.trim()||name.length>40||!theme||typeof theme!=='object'||Array.isArray(theme))throw new Error('Invalid saved theme.');for(const key of Object.keys(defaults.theme))if(typeof theme[key]!=='string'||!/^#[\da-f]{6}$/i.test(theme[key]))throw new Error(`Theme ${name} needs all theme colors as #RRGGBB.`);for(const key of Object.keys(theme))if(!Object.hasOwn(defaults.theme,key))throw new Error(`Unknown theme color: ${key}`);}
   if(!Number.isInteger(config.scrollback)||config.scrollback<100||config.scrollback>50000)throw new Error('scrollback must be between 100 and 50000 lines.');
   for(const key of ['storage','shortcuts'])if(value[key]!==undefined&&(!value[key]||typeof value[key]!=='object'||Array.isArray(value[key])))throw new Error(`${key} must be an object.`);
-  for(const key of Object.keys(config.storage))if(!(key in defaults.storage))throw new Error(`Unknown storage setting: ${key}`);
+  for(const key of Object.keys(config.storage))if(!Object.hasOwn(defaults.storage,key))throw new Error(`Unknown storage setting: ${key}`);
   if(typeof config.storage.enabled!=='boolean'||!Number.isInteger(config.storage.saveDelayMs)||config.storage.saveDelayMs<100||config.storage.saveDelayMs>5000||!Number.isInteger(config.storage.maxWorkspaces)||config.storage.maxWorkspaces<1||config.storage.maxWorkspaces>100)throw new Error('Storage needs enabled, saveDelayMs (100–5000) and maxWorkspaces (1–100).');
   const used=new Set();for(const [key,combo]of Object.entries(config.shortcuts)){
-    if(!(key in shortcuts)||typeof combo!=='string')throw new Error(`Unknown keyboard action: ${key}`);
+    if(!Object.hasOwn(shortcuts,key)||typeof combo!=='string')throw new Error(`Unknown keyboard action: ${key}`);
     if(combo==='')continue;
     if(!/^(?:(?:Cmd|Ctrl|Alt|Shift)\+)+(?:[A-Z0-9]|,|\/|Right|Left|Up|Down|Enter|Space|F(?:[1-9]|1[0-2]))$/.test(combo))throw new Error(`Invalid shortcut: ${combo}`);
     const parts=combo.split('+'),keyName=parts.pop(),mods=parts.sort();if(new Set(mods).size!==mods.length)throw new Error('Repeated shortcut modifier.');
@@ -52,7 +52,7 @@ function save(path,text) {
  const config=validate(typeof text==='string'?parse(text):text);
  let source=existsSync(path)?readFileSync(path,'utf8'):header+'{}\n';
  // Patch changed root keys so editor comments and untouched formatting survive GUI saves.
- try{const old=parse(source);for(const [key,value]of Object.entries(config))if(JSON.stringify(old[key])!==JSON.stringify(value))source=jsonc.applyEdits(source,jsonc.modify(source,[key],value,{formattingOptions:{insertSpaces:true,tabSize:2}}));}catch{source=header+JSON.stringify(config,null,2)+'\n';}
+ try{const old=parse(source);for(const key of Object.keys(old))if(!Object.hasOwn(defaults,key))source=jsonc.applyEdits(source,jsonc.modify(source,[key],undefined,{formattingOptions:{insertSpaces:true,tabSize:2}}));for(const [key,value]of Object.entries(config))if(JSON.stringify(old[key])!==JSON.stringify(value))source=jsonc.applyEdits(source,jsonc.modify(source,[key],value,{formattingOptions:{insertSpaces:true,tabSize:2}}));}catch{source=header+JSON.stringify(config,null,2)+'\n';}
  if(!source.includes('https://qentrah.com/docs/qesh/configuration'))source=header+source;
  const temporary=path+'.tmp';writeFileSync(temporary,source,{mode:0o600});renameSync(temporary,path);return config;
 }

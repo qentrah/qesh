@@ -20,3 +20,5 @@ vendored code retain their respective licenses.
 ## Tool identifiers
 
 Claude and OpenCode SVG identifiers are from Simple Icons (CC0): https://github.com/simple-icons/simple-icons. The OpenAI monoblossom identifies Codex and is from https://cdn.openai.com/brand/OpenAI-Logos-2025.zip. Brand marks remain their owners’ trademarks and identify the running tools; no affiliation is implied.
+
+The Settings gear uses Lucide's settings.svg (https://github.com/lucide-icons/lucide/blob/main/icons/settings.svg), copyright 2026 Lucide Icons and Contributors. The ISC license and bundled upstream license text are in desktop/icons/Lucide-LICENSE.txt. Other small toolbar/menu paths are Qesh source assets.

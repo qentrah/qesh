@@ -3,7 +3,7 @@ import pty from 'node-pty';
 import {execFile} from 'node:child_process';
 import { createInterface } from 'node:readline';
 import { accessSync, constants } from 'node:fs';
-import { basename } from 'node:path';
+import { basename, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const zshConfig = fileURLToPath(new URL('./shell/zsh', import.meta.url));
 const sessions = new Map();
@@ -54,7 +54,7 @@ createInterface({ input: process.stdin }).on('line', line => {
       accessSync(message.cwd, constants.R_OK);
       const session = pty.spawn(message.shell, message.args, {
         cwd: message.cwd, cols: message.cols, rows: message.rows,
-        name: 'xterm-256color', env: { ...process.env, ...(basename(message.shell) === 'zsh' ? { ZDOTDIR: zshConfig, QENTRAH_USER_ZDOTDIR: process.env.ZDOTDIR || process.env.HOME } : {}), TERM: 'xterm-256color', COLORTERM: 'truecolor', QENTRAH_TERMINAL: '1' },
+        name: 'xterm-256color', env: { ...process.env, ...(basename(message.shell) === 'zsh' ? { ZDOTDIR: zshConfig, QENTRAH_USER_ZDOTDIR: process.env.ZDOTDIR || process.env.HOME } : {}), QESH_BIN_PATH:fileURLToPath(new URL('../bin',import.meta.url)),QESH_RUNTIME_PATH:dirname(process.execPath),TERM: 'xterm-256color', COLORTERM: 'truecolor', QENTRAH_TERMINAL: '1' },
       });
       sessions.set(id, session);generations.set(session,message.generation);
       live.add(session);
@@ -82,7 +82,7 @@ createInterface({ input: process.stdin }).on('line', line => {
         const remaining = Math.max(0, (pending.get(session) ?? 0) - message.size);
         pending.set(session, remaining);
         if (remaining < 131072) session.resume();
-      } else if (message.type === 'input') session.write(message.data);
+      } else if (message.type === 'input') session.write(message.encoding==='latin1'?Buffer.from(message.data,'latin1'):message.data);
       else if (message.type === 'resize') session.resize(message.cols, message.rows);
     }
   } catch (error) { send({ type: 'error', id: message?.id ?? '', generation:message?.generation,message: error.message }); }

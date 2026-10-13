@@ -9,8 +9,10 @@ interface Options extends RenderableOptions {
   onActivate: () => void; onSelected: (text: string) => void;
 }
 type Point = { x: number; y: number };
-const fgDefault = RGBA.fromHex(colors.foreground), bgDefault = RGBA.fromHex(colors.background);
-const selectionBg = RGBA.fromHex(colors.selection);
+let fgDefault = RGBA.fromHex(colors.foreground), bgDefault = RGBA.fromHex(colors.background);
+let selectionBg = RGBA.fromHex(colors.selection);
+let themeKey='';
+function refreshTheme(){const key=colors.foreground+colors.background+colors.selection;if(themeKey===key)return;themeKey=key;fgDefault=RGBA.fromHex(colors.foreground);bgDefault=RGBA.fromHex(colors.background);selectionBg=RGBA.fromHex(colors.selection);}
 const palette = new Map<string, RGBA>();
 function color(cell: IBufferCell, foreground: boolean): RGBA {
   const n = foreground ? cell.getFgColor() : cell.getBgColor();
@@ -26,6 +28,7 @@ export class TerminalSurface extends Renderable {
   private manager: SessionManager; private sessionId: string;
   private _active: boolean; private _obscured: boolean;
   private activate: () => void; private selected: (text: string) => void;
+  private applicationDrag=false;private applicationButton=0;
   private anchor?: Point; private end?: Point; private selectionBase = 0;
   private output = (id: string) => { if (id === this.sessionId) this.requestRender(); };
   constructor(ctx: RenderContext, options: Options) {
@@ -36,11 +39,12 @@ export class TerminalSurface extends Renderable {
     this.manager.on('output', this.output);
     this.onMouseDown = event => this.mouseDown(event);
     this.onMouseDrag = event => this.mouseDrag(event);
-    this.onMouseUp = () => this.finishSelection();
-    this.onMouseDragEnd = () => this.finishSelection();
+    this.onMouseUp = event => this.mouseUp(event);
+    this.onMouseDragEnd = event => this.mouseUp(event);
+    this.onMouseMove=event=>{if(!this._obscured){const point=this.point(event);this.manager.mouse(this.sessionId,'move',event.button,point.x,point.y,event.modifiers);}};
     this.onMouseScroll = event => {
       if (this._obscured) return;
-      this.manager.scroll(this.sessionId, event.scroll?.direction === 'up' ? 3 : -3);
+      const point=this.point(event);this.manager.wheel(this.sessionId,event.scroll?.direction||'down',point.x,point.y,event.scroll?.delta||1,event.modifiers);
       this.anchor = this.end = undefined; this.selected('');
     };
   }
@@ -52,16 +56,17 @@ export class TerminalSurface extends Renderable {
     return { x: Math.max(0, Math.min(this.width - 1, event.x - this.screenX)), y: Math.max(0, Math.min(this.height - 1, event.y - this.screenY)) };
   }
   private mouseDown(event: MouseEvent) {
-    if (this._obscured || event.button !== 0) return;
-    this.activate(); this.anchor = this.end = this.point(event);
+    if (this._obscured) return;this.activate();const point=this.point(event);if(this.manager.mouse(this.sessionId,'down',event.button,point.x,point.y,event.modifiers)){this.applicationDrag=true;this.applicationButton=event.button;this.anchor=this.end=undefined;this.selected('');return;}if(event.button!==0)return;
+     this.anchor = this.end = this.point(event);
     const session = this.manager.sessions.get(this.sessionId);
     this.selectionBase = Math.max(0, (session?.terminal.buffer.active.baseY ?? 0) - (session?.scroll ?? 0));
     this.selected(''); this.requestRender();
   }
   private mouseDrag(event: MouseEvent) {
-    if (this._obscured || !this.anchor) return;
+    if(this._obscured)return;if(this.applicationDrag){const point=this.point(event);this.manager.mouse(this.sessionId,'drag',this.applicationButton,point.x,point.y,event.modifiers);return;}if(!this.anchor)return;
     this.end = this.point(event); this.requestRender();
   }
+  private mouseUp(event:MouseEvent){if(this.applicationDrag){const point=this.point(event);this.manager.mouse(this.sessionId,'up',this.applicationButton,point.x,point.y,event.modifiers);this.applicationDrag=false;}else this.finishSelection();}
   private finishSelection() { if (this.anchor && this.end) this.selected(this.getSelectedText()); }
   private selectionRange() {
     if (!this.anchor || !this.end) return;
@@ -83,7 +88,7 @@ export class TerminalSurface extends Renderable {
     return lines.join('\n');
   }
   protected renderSelf(buffer: OptimizedBuffer) {
-    const session = this.manager.sessions.get(this.sessionId); if (!session) return;
+    refreshTheme();const session = this.manager.sessions.get(this.sessionId); if (!session) return;
     const term = session.terminal, activeBuffer = term.buffer.active;
     const base = Math.max(0, activeBuffer.baseY - Math.min(session.scroll, activeBuffer.baseY));
     const range = this.selectionRange();
@@ -107,7 +112,7 @@ export class TerminalSurface extends Renderable {
     }
     if (this._active) {
       // OpenTUI's host cursor uses one-based terminal coordinates; xterm uses zero-based cells.
-      this.ctx.setCursorPosition(this.screenX + Math.min(activeBuffer.cursorX, this.width - 1) + 1, this.screenY + activeBuffer.cursorY + 1,
+      this.ctx.setCursorPosition(this.screenX + Math.min(activeBuffer.cursorX, this.width - 1) + 1, this.screenY + Math.min(activeBuffer.cursorY,this.height-1) + 1,
         !this._obscured && !session.scroll && session.status === 'running' && session.cursorVisible);
       this.ctx.setCursorStyle({ style: 'block', blinking: false });
       this.ctx.setCursorColor(RGBA.fromHex(colors.primary));

@@ -15,3 +15,5 @@ dist/
 *.sqlite
 *.sqlite-wal
 *.sqlite-shm
+
+desktop/settings.bundle.js

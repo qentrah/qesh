@@ -19,6 +19,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
   const [, update] = useReducer(n => n + 1, 0);
   const [modal, setModalState] = useState<Modal>(null), modalRef = useRef<Modal>(null);
   const [prefix, setPrefix] = useState(false), prefixRef = useRef(false);
+  const [hoverDivider,setHoverDivider]=useState('');
   const [notice, setNotice] = useState(''), [rename, setRename] = useState('');
   const selections = useRef(new Map<string, string>());
   const draggingDivider = useRef<Divider | null>(null);
@@ -46,7 +47,7 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
     } else action();
   }
   useEffect(() => {
-    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string; config?: any }) => {
+    const command = (message: { action: string; id?: string; name?: string; group?: string; before?: string; edge?: string; cwd?: string; color?: string; confirmed?: boolean; config?: any }) => {
       if(message.action==='configure'&&message.config){workspace.sessions.setScrollback(message.config.scrollback);workspace.maxWorkspaces=message.config.storage.maxWorkspaces;applyTheme(message.config.theme);workspace.emit('change');return;}
       if (modalRef.current) return;
       if(message.action==='run-command'&&message.name&&/^[a-z][a-z0-9-]{0,39}$/.test(message.name)){workspace.newTab();const id=workspace.tab.focused;workspace.rename(message.name);const ready=()=>{const session=workspace.sessions.sessions.get(id);if(!session||session.status==='error'||session.status==='exited'){workspace.sessions.off('change',ready);return;}if(session.status==='running'){workspace.sessions.off('change',ready);workspace.sessions.input(id,`qh ${message.name}\r`);}};workspace.sessions.on('change',ready);ready();}
@@ -56,20 +57,23 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       else if(message.action==='color-workspace'&&message.id)workspace.colorSpace(message.id,message.color||'');
       else if(message.action==='color-tab'&&message.id)workspace.colorTab(message.id,message.color||'');
       else if(message.action==='rename-pane'&&message.id&&message.name){const session=workspace.sessions.sessions.get(message.id);if(session){session.label=message.name.slice(0,40);workspace.emit('change');}}
-      else if(message.action==='close-workspace'&&message.id){const space=workspace.spaces.find(space=>space.id===message.id);if(space)confirm('Close workspace?',space.tabs.flatMap(tab=>leaves(tab.tree)),()=>{workspace.closeSpace(space.id);if(!workspace.spaces.length)onQuit();});}
-      else if (message.action === 'new-tab') {if(message.id)workspace.selectSpace(message.id);workspace.newTab(message.cwd);}
+      else if(message.action==='close-workspace'&&message.id){const space=workspace.spaces.find(space=>space.id===message.id);if(space)(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close workspace?',space.tabs.flatMap(tab=>leaves(tab.tree)),()=>{workspace.closeSpace(space.id);if(!workspace.spaces.length)onQuit();});}
+      else if (message.action === 'new-tab') {if(message.id){if(!workspace.spaces.some(space=>space.id===message.id))return;workspace.selectSpace(message.id);}workspace.newTab(message.cwd);}
       else if (message.action === 'switch-tab' && message.id) workspace.selectTab(message.id);
-      else if (message.action === 'rename-tab' && message.id && message.name) { workspace.selectTab(message.id); workspace.rename(message.name); }
-      else if (message.action === 'close-tab' && message.id) { workspace.selectTab(message.id); confirm('Close tab?', leaves(workspace.tab.tree), closeTab); }
-      else if (message.action === 'split-right') workspace.split('horizontal');
-      else if (message.action === 'split-down') workspace.split('vertical');
+      else if (message.action === 'rename-tab' && message.id && message.name) { if(!workspace.selectTab(message.id))return; workspace.rename(message.name); }
+      else if (message.action === 'close-tab' && message.id) { if(!workspace.selectTab(message.id))return; (message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close tab?', leaves(workspace.tab.tree), closeTab); }
+      else if(message.action==='close-pane'&&message.id){if(!workspace.activatePane(message.id))return;(message.confirmed?(_title:string,_ids:string[],action:()=>void)=>action():confirm)('Close this shell?',[message.id],closePane);}
+      else if(message.action==='equalize')workspace.equalize();
+      else if(message.action==='restart-pane'&&message.id)workspace.sessions.restart(message.id);
+      else if (message.action === 'split-right') {if(message.id&&!workspace.activatePane(message.id))return;workspace.split('horizontal');}
+      else if (message.action === 'split-down') {if(message.id&&!workspace.activatePane(message.id))return;workspace.split('vertical');}
       else if (message.action === 'help') setModal({kind:'help'});
-      else if(message.action==='rename-group'&&message.group&&message.name)workspace.renameGroup(message.group,message.name);
+      else if(message.action==='rename-group'&&message.group&&message.name){if(message.id){if(!workspace.spaces.some(space=>space.id===message.id))return;workspace.selectSpace(message.id);}workspace.renameGroup(message.group,message.name);}
       else if (message.action === 'new-group' && message.name) workspace.addGroup(message.name);
       else if (message.action === 'group-tab' && message.id) workspace.groupTab(message.id,message.group);
       else if (message.action === 'reorder-tab' && message.id && message.before) workspace.reorderTab(message.id,message.before);
       else if (message.action === 'dock-tab' && message.id && message.edge) workspace.dockTab(message.id,message.edge);
-      else if (message.action === 'focus-pane' && message.id) workspace.focus(message.id);
+      else if (message.action === 'focus-pane' && message.id) workspace.activatePane(message.id);
       else if (message.action === 'dock-pane' && message.id && message.edge) workspace.dockPane(message.id,message.edge);
       else if (message.action === 'detach-pane' && message.id) workspace.detachPane(message.id);
     };
@@ -176,16 +180,17 @@ export function App({ workspace, onQuit, clipboard = copyText }: { workspace: Wo
       <box height={bounds.height} width={width} position="relative" overflow="hidden">
         {paneEntries.map(([id, rect]) => {
           const session = workspace.sessions.sessions.get(id), active = tab.focused === id;
-          const label = `${desktop ? '' : active ? '› ' : '  '}${basename(session?.shell ?? workspace.shell)}${session?.status === 'starting' ? ' · starting' : ''}${session?.status === 'exited' ? ` (${session.exitCode}) · Ctrl+B Enter restart` : session?.status === 'error' ? ` · ${session.error}` : ''}`;
+          const label = `${desktop ? '' : active ? '› ' : '  '}${session?.label||basename(session?.shell ?? workspace.shell)+(desktop&&layout.panes.size>1?' '+([...layout.panes.keys()].indexOf(id)+1):'')}${session?.status === 'starting' ? ' · starting' : ''}${session?.status === 'exited' ? ` (${session.exitCode}) · Ctrl+B Enter restart` : session?.status === 'error' ? ` · ${session.error}` : ''}`;
           return <box key={id} position="absolute" left={rect.x} top={rect.y} width={rect.width} height={rect.height} flexDirection="column">
             {!!paneHeader(id) && <text height={1} wrapMode="none" bg={colors.background} fg={session?.status === 'error' ? colors.error : active ? colors.primary : colors.muted} onMouseDown={() => { if (!modalRef.current) workspace.focus(id); }}>{label}</text>}
             <terminal-surface manager={workspace.sessions} sessionId={id} active={active} obscured={!!modal} width={rect.width} height={Math.max(1, rect.height - paneHeader(id))} onActivate={() => workspace.focus(id)} onSelected={text => selections.current.set(id, text)} />
           </box>;
         })}
         {layout.dividers.map(divider => <box key={divider.id} id={`divider-${divider.id}`} position="absolute" left={divider.x} top={divider.y} width={divider.width} height={divider.height} backgroundColor={colors.background}
+          onMouseOver={()=>setHoverDivider(divider.id)} onMouseOut={()=>setHoverDivider('')}
           onMouseDrag={event => resizeDivider(divider, event.x, event.y - topChrome)}
           onMouseDown={event => { draggingDivider.current = divider; resizeDivider(divider, event.x, event.y - topChrome); }}>
-          <text fg={desktop ? colors.background : colors.border} wrapMode="none">{divider.axis === 'horizontal' ? Array.from({ length: divider.height }, () => '│').join('\n') : '─'.repeat(divider.width)}</text>
+          <text fg={desktop ? (hoverDivider===divider.id?colors.muted:colors.surface) : colors.border} wrapMode="none">{divider.axis === 'horizontal' ? Array.from({ length: divider.height }, () => '│').join('\n') : '─'.repeat(divider.width)}</text>
         </box>)}
       </box>
       {!!footerRows && <text height={1} wrapMode="none" bg={colors.surface} fg={prefix ? colors.primary : colors.muted}>
