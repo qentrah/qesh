@@ -84,9 +84,18 @@ ipcMain.handle('app:action',async(event,request)=>{
  const record=[...windows.values()].find(record=>record.window.webContents===event.sender);if(!record)return {error:'Window unavailable'};
  try {
   debug(`Action ${request.action}`);
+  if(request.action==='project-destination'){
+    const {findProject}=await import(join(root,'lib/projects.mjs'));const project=findProject(request.project);if(!project)throw new Error('Select a Qentrah project.');
+    const result=await dialog.showOpenDialog(record.window,{title:`Choose a parent folder for ${project.name}`,buttonLabel:'Use folder',properties:['openDirectory','createDirectory']});return result.canceled?{canceled:true}:{directory:join(result.filePaths[0],project.name)};
+  }
+  if(request.action==='project-run'){
+    if(record.kind==='settings')throw new Error('Open Projects in a terminal window.');
+    if(!record.projectRunner){const {createProjectRunner}=await import(join(root,'lib/project-jobs.mjs'));record.projectRunner=createProjectRunner({node:bundled?join(runtime,'node'):process.env.QENTRAH_NODE||'node',cli:join(root,'bin/qh'),env:{...process.env,QENTRAH_TERMINAL:'1',PATH:[...(runtime?[runtime]:[]),join(homedir(),'.bun/bin'),join(homedir(),'.local/bin'),'/opt/homebrew/bin','/usr/local/bin',process.env.PATH||''].join(':')},onUpdate:message=>{if(!record.window.isDestroyed())record.window.webContents.send('terminal:event',message);}});}
+    return await record.projectRunner.run(request);
+  }
   if(request.action==='settings')return {config:record.config,path:configPath,ui:record.ui};
   if(request.action==='open-settings'){settingsWindow(record,request.page);return {};}
-  if(request.action==='save-ui'){const value=request.ui;if(value&&Number.isFinite(value.sidebarWidth))record.ui.sidebarWidth=Math.max(190,Math.min(400,value.sidebarWidth));if(typeof value?.sidebarCollapsed==='boolean')record.ui.sidebarCollapsed=value.sidebarCollapsed;if(['terminal','settings','commands'].includes(value?.view))record.ui.view=value.view;if(['appearance','terminal','storage','keyboard','commands','updates','about'].includes(value?.page))record.ui.page=value.page;saveUI(record);return {};}
+  if(request.action==='save-ui'){const value=request.ui;if(value&&Number.isFinite(value.sidebarWidth))record.ui.sidebarWidth=Math.max(190,Math.min(400,value.sidebarWidth));if(typeof value?.sidebarCollapsed==='boolean')record.ui.sidebarCollapsed=value.sidebarCollapsed;if(['terminal','settings','commands','projects'].includes(value?.view))record.ui.view=value.view;if(['appearance','terminal','storage','keyboard','commands','updates','about'].includes(value?.page))record.ui.page=value.page;saveUI(record);return {};}
   if(request.action==='configuration')return {text:JSON.stringify(configuration.load(configPath),null,2),path:configPath};
   if(request.action==='save-config') {const config=configuration.save(configPath,request.config||request.text);for(const r of windows.values()){r.config=config;r.window.setBackgroundColor(config.theme.background);r.window.webContents.send('terminal:event',{type:'config',config});send(r,{type:'control',command:{action:'configure',config}});}installMenu(config);return {config,path:configPath};}
   if(request.action==='report-error'&&typeof request.message==='string'){record.errors.push({time:Date.now(),message:request.message.slice(0,1000)});record.errors=record.errors.slice(-30);return {};}

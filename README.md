@@ -41,6 +41,8 @@ qh workspace Research # Open a named CLI workspace
 
 ### Qentrah projects from your terminal
 
+In the desktop app, open **Projects** from the bottom of the sidebar. Search for a project, choose npm or Bun for a published CLI, select a folder to clone source, fork on GitHub, or fill out a bug report. Actions show progress and errors beside the terminal while your shells keep running.
+
 The bundled `qh` can discover every public Qentrah repository, install published CLIs, clone source, fork projects, and report bugs:
 
 ```sh
